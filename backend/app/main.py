@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings   # Import settings
+from app.db.session import engine      # Import engine
+app = FastAPI(title=settings.PROJECT_NAME, version="1.0")
 
-app = FastAPI(title="Campus Career AI", version="1.0")
 
 # Enable CORS (Crucial for Member 2 to connect React later)
 app.add_middleware(
@@ -14,7 +16,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Campus Career AI API", "status": "active"}
+    return {"message": f"Welcome to {settings.PROJECT_NAME}", "status": "active"}
 
 @app.get("/health")
 def health_check():
