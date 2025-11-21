@@ -1,0 +1,15 @@
+# Backend (Python) ignores
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+
+# Frontend (Node) ignores
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.DS_Store
+
+# General
+.vscode/
+.idea/
