@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings   # Import settings
 from app.db.session import engine      # Import engine
+from app.db.session import check_db_connection
 app = FastAPI(title=settings.PROJECT_NAME, version="1.0")
 
 
@@ -13,6 +14,10 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+@app.on_event("startup")
+def on_startup():
+    check_db_connection()
 
 @app.get("/")
 def read_root():
