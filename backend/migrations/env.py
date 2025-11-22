@@ -6,8 +6,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.models.auth import User, Student, Company
-# (Add future models here later, e.g., from app.models.job import Job)
-
+from app.models.job import Job 
 
 # this is the Alembic Config object
 config = context.config
