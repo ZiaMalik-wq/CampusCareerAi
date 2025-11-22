@@ -1,23 +1,36 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings   # Import settings
-from app.db.session import engine      # Import engine
+
+from app.core.config import settings
 from app.db.session import check_db_connection
-app = FastAPI(title=settings.PROJECT_NAME, version="1.0")
+from app.api.routes import auth
 
-
-# Enable CORS (Crucial for Member 2 to connect React later)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+# 1. Define the Lifespan (Startup & Shutdown logic)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Starting up...")
+    check_db_connection()
+    yield
+    print("Shutting down...")
+# 2. Initialize App with Lifespan
+app = FastAPI(
+    title=settings.PROJECT_NAME, 
+    version="1.0",
+    lifespan=lifespan
 )
 
-@app.on_event("startup")
-def on_startup():
-    check_db_connection()
+# 3. CORS Config
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 4. Register Routers
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
 @app.get("/")
 def read_root():
