@@ -40,17 +40,16 @@ class Student(SQLModel, table=True):
     # Relationship
     user: Optional[User] = Relationship(back_populates="student_profile")
 
-# 4. COMPANIES Table
+
 class Company(SQLModel, table=True):
     __tablename__ = "companies"
-
+    
     id: Optional[int] = Field(default=None, primary_key=True)
-    
-    # Foreign Key linking to User
     user_id: int = Field(foreign_key="users.id")
-    
     company_name: str
     location: Optional[str] = None
     
-    # Relationship
+    # Existing relationship
     user: Optional[User] = Relationship(back_populates="company_profile")
+
+    jobs: List["Job"] = Relationship(back_populates="company")

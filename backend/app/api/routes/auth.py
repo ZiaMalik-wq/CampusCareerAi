@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm 
 from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.auth import User, Student, Company, UserRole
-from app.schemas import UserCreate, UserPublic
-from app.core.security import get_password_hash
+from app.schemas import UserCreate, UserPublic, Token
+from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.config import settings
+from datetime import timedelta
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -53,3 +57,62 @@ def register_user(user_in: UserCreate, session: Session = Depends(get_session)):
     session.commit()
 
     return new_user
+
+@router.post("/token", response_model=Token)
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session)
+):
+    """
+    Logs in a user.
+    Note: OAuth2 spec uses 'username', but we treat it as 'email'.
+    """
+    
+    # 1. Find user by email
+    statement = select(User).where(User.email == form_data.username)
+    user = session.exec(statement).first()
+    
+    # 2. Check if user exists AND password is correct
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 3. Create JWT Token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email, "role": user.role.value, "id": user.id},
+        expires_delta=access_token_expires
+    )
+    
+    # 4. Return the token
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserPublic)
+def read_users_me(current_user: User = Depends(get_current_user)):
+    """
+    Get current user details with their name.
+    """
+    
+    # 1. Determine the name based on Role
+    display_name = None
+    
+    if current_user.role == UserRole.STUDENT:
+        # Check if profile exists to avoid crash
+        if current_user.student_profile:
+            display_name = current_user.student_profile.full_name
+            
+    elif current_user.role == UserRole.COMPANY:
+        if current_user.company_profile:
+            # For companies, we use company_name as the full_name
+            display_name = current_user.company_profile.company_name
+
+    # 2. Return the data matching the UserPublic schema
+    return UserPublic(
+        id=current_user.id,
+        email=current_user.email,
+        role=current_user.role,
+        full_name=display_name
+    )
