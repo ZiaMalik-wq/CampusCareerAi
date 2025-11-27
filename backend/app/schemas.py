@@ -1,6 +1,8 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from app.models.auth import UserRole
 from typing import Optional
+from app.models.job import Job
 
 # 1. Schema for User Registration (What the Frontend sends)
 class UserCreate(BaseModel):
@@ -16,7 +18,30 @@ class UserPublic(BaseModel):
     role: UserRole
     full_name: Optional[str] = None
 
-# NEW: Token Schema
+# Token Schema
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class JobCreate(BaseModel):
+    title: str
+    description: str
+    location: str
+    job_type: str  # Internship, Full-time, etc.
+    salary_range: Optional[str] = None
+    max_seats: int = 1
+
+class JobPublic(JobCreate):
+    id: int
+    company_id: int
+    created_at: datetime
+    is_active: bool
+
+class JobUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    job_type: Optional[str] = None
+    salary_range: Optional[str] = None
+    max_seats: Optional[int] = None
+    is_active: Optional[bool] = None
