@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db.session import check_db_connection
 from app.api.routes import auth
 from app.api.routes import auth, jobs
+from app.core.vector_db import vector_db
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +20,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Application is starting up...")
     check_db_connection()
+    # Trigger Qdrant Connection
+    _ = vector_db
     yield
     logger.info("Application is shutting down...")
 
