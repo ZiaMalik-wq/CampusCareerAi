@@ -72,9 +72,12 @@ def create_new_job(
     except Exception as e:
         logger.error(f"Failed to embed job {new_job.id}: {e}")
         # Note: We don't stop the request. The job is saved in SQL, even if AI fails.
-    
-    
-    return new_job
+        
+    return JobPublic(
+        **new_job.model_dump(),
+        company_name=current_user.company_profile.company_name,
+        company_location=current_user.company_profile.location
+    )
 
 @router.put("/{job_id}", response_model=JobPublic)
 def update_job(
