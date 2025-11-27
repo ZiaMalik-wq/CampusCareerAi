@@ -34,6 +34,8 @@ class JobCreate(BaseModel):
 class JobPublic(JobCreate):
     id: int
     company_id: int
+    company_name: Optional[str] = None
+    company_location: Optional[str] = None
     created_at: datetime
     is_active: bool
 
