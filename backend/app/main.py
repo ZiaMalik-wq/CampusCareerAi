@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import check_db_connection
 from app.api.routes import auth
+from app.api.routes import auth, jobs
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +49,7 @@ app.add_middleware(
 
 # 6. Register Routers
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 
 # 7. Root Endpoints
 @app.get("/", tags=["Status"])
