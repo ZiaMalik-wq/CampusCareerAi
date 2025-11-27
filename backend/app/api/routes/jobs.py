@@ -5,7 +5,11 @@ from app.models.auth import User, UserRole
 from app.models.job import Job
 from app.schemas import JobCreate, JobPublic, JobUpdate
 from app.api.deps import get_current_user
+from app.core.ai import ai_model
+from app.core.vector_db import vector_db
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/create", response_model=JobPublic)
@@ -44,6 +48,31 @@ def create_new_job(
     session.add(new_job)
     session.commit()
     session.refresh(new_job)
+    
+    try:
+        # A. Prepare text for the AI (Combine important fields)
+        text_to_embed = f"{new_job.title}. {new_job.description}. {new_job.job_type}. {new_job.location}"
+        
+        # B. Generate Vector (List of 384 floats)
+        vector = ai_model.generate_embedding(text_to_embed)
+        
+        # C. Save to Qdrant
+        vector_db.upsert_job(
+            job_id=new_job.id,
+            vector=vector,
+            metadata={
+                "company_id": new_job.company_id,
+                "job_type": new_job.job_type,
+                "location": new_job.location,
+                "company_name": current_user.company_profile.company_name
+            }
+        )
+        logger.info(f"Job {new_job.id} embedded and saved to Qdrant.")
+        
+    except Exception as e:
+        logger.error(f"Failed to embed job {new_job.id}: {e}")
+        # Note: We don't stop the request. The job is saved in SQL, even if AI fails.
+    
     
     return new_job
 
@@ -162,3 +191,42 @@ def read_jobs(
 
     return public_jobs
 
+@router.post("/reindex")
+def reindex_all_jobs(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    ADMIN UTILITY: Force re-calculate embeddings for ALL jobs.
+    Useful for syncing SQL and Vector DB.
+    """
+    # Only allow Admin (or Company for now if you haven't made Admin user)
+    # Ideally: if current_user.role != UserRole.ADMIN: raise 403
+    
+    jobs = session.exec(select(Job)).all()
+    count = 0
+    
+    for job in jobs:
+        # 1. Generate text
+        text = f"{job.title}. {job.description}. {job.job_type}. {job.location}"
+        
+        # 2. Embed
+        vector = ai_model.generate_embedding(text)
+        
+        # 3. Upsert
+        # We need to fetch company name manually since it might not be loaded
+        company_name = job.company.company_name if job.company else "Unknown"
+        
+        vector_db.upsert_job(
+            job_id=job.id,
+            vector=vector,
+            metadata={
+                "company_id": job.company_id,
+                "job_type": job.job_type,
+                "location": job.location,
+                "company_name": company_name
+            }
+        )
+        count += 1
+        
+    return {"message": f"Successfully re-indexed {count} jobs to Qdrant."}
