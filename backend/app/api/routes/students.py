@@ -6,6 +6,7 @@ from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.api.deps import get_current_user
 from app.schemas import StudentUpdate, StudentPublic
+from app.core.pdf_utils import extract_text_from_pdf
 
 router = APIRouter()
 
@@ -40,37 +41,43 @@ def update_student_profile(
 
     return student
 
+
 @router.post("/resume")
 def upload_resume(
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Upload a PDF resume.
-    Saves the file locally and updates the database URL.
-    """
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can upload resumes")
 
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    # 1. Create a unique filename (user_id_filename.pdf)
-    # This prevents users from overwriting each other's files
+    # 1. Save file to disk
     filename = f"{current_user.id}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIR, filename)
 
-    # 2. Save the file to disk
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # 3. Update DB with the path
+    # 2. Extract Text
+    extracted_text = extract_text_from_pdf(file_path)
+    
+    if not extracted_text:
+        # Warning: This happens if the PDF is just an image (scanned)
+        print("Warning: No text extracted. PDF might be an image.")
+
+    # 3. Update Database (Url + Text)
     student = current_user.student_profile
     student.resume_url = file_path
-    
+    student.resume_text = extracted_text
     session.add(student)
     session.commit()
     session.refresh(student)
 
-    return {"message": "Resume uploaded successfully", "filename": filename}
+    return {
+        "message": "Resume uploaded and processed successfully", 
+        "filename": filename,
+        "text_preview": extracted_text[:100] + "..." # Show first 100 chars to prove it worked
+    }
