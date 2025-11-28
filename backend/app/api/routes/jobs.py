@@ -176,6 +176,121 @@ def search_jobs_semantic(
 
     return ordered_jobs
 
+@router.get("/hybrid", response_model=list[JobPublic])
+def search_jobs_hybrid(
+    q: str,
+    session: Session = Depends(get_session),
+    limit: int = 10
+):
+    """
+    Hybrid Search.
+    Combines SQL Keyword Search (Exact matches) + Vector Semantic Search (Meaning matches).
+    Deduplicates results to avoid showing the same job twice.
+    """
+    if not q:
+        return []
+
+    # 1. Run Semantic Search
+    # Convert query -> vector -> Qdrant search
+    query_vector = ai_model.generate_embedding(q)
+    # We ask for 'limit' number of semantic results
+    semantic_points = vector_db.search(vector=query_vector, limit=limit)
+    semantic_job_ids = [point.id for point in semantic_points]
+
+    # 2. Run Keyword Search (The "Exact" Search)
+    query_pattern = f"%{q}%"
+    statement = select(Job).where(
+        or_(
+            col(Job.title).ilike(query_pattern),
+            col(Job.description).ilike(query_pattern),
+            col(Job.location).ilike(query_pattern)
+        )
+    ).where(Job.is_active == True).limit(limit)
+    
+    keyword_jobs = session.exec(statement).all()
+    keyword_job_ids = [job.id for job in keyword_jobs]
+
+    # 3. Combine & Deduplicate
+    # We use a Python Set to ensure unique IDs
+    all_ids = set(semantic_job_ids + keyword_job_ids)
+    
+    if not all_ids:
+        return []
+
+    # 4. Fetch Full Details from SQL
+    # Fetch all jobs that matched EITHER search
+    statement = select(Job).where(Job.id.in_(all_ids))
+    final_jobs = session.exec(statement).all()
+
+    # 5. Formatting (Add Company Name)
+    public_jobs = []
+    for job in final_jobs:
+        job_data = job.model_dump()
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+        public_jobs.append(JobPublic(**job_data))
+        
+    return public_jobs
+
+@router.get("/my-jobs", response_model=list[JobPublic])
+def read_my_jobs(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get jobs posted by the CURRENT logged-in company.
+    """
+    if current_user.role != UserRole.COMPANY or not current_user.company_profile:
+        raise HTTPException(status_code=403, detail="Not a company")
+        
+    # Filter by company_id
+    statement = select(Job).where(Job.company_id == current_user.company_profile.id)
+    jobs = session.exec(statement).all()
+    
+    # Format response
+    public_jobs = []
+    for job in jobs:
+        job_data = job.model_dump()
+        # We know the company name since it's the current user
+        job_data["company_name"] = current_user.company_profile.company_name
+        job_data["company_location"] = current_user.company_profile.location 
+        public_jobs.append(JobPublic(**job_data))
+        
+    return public_jobs
+
+
+@router.get("/", response_model=list[JobPublic])
+def read_jobs(
+    session: Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = 20,
+):
+    """
+    Get all active jobs.
+    Public endpoint (no login required to view jobs).
+    """
+    # 1. Query Jobs where is_active is True
+    statement = select(Job).where(Job.is_active == True).offset(offset).limit(limit)
+    jobs = session.exec(statement).all()
+
+    # 2. Enrich with Company Info
+    # We need to manually populate company_name because it's in a different table
+    # SQLModel relationships make this easy: job.company.company_name
+    public_jobs = []
+    for job in jobs:
+        # Create a dict from the job model
+        job_data = job.model_dump()
+        
+        # Add company details if available
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+            
+        public_jobs.append(JobPublic(**job_data))
+
+    return public_jobs
+
 @router.put("/{job_id}", response_model=JobPublic)
 def update_job(
     job_id: int,
@@ -213,32 +328,6 @@ def update_job(
     
     return job
 
-@router.get("/my-jobs", response_model=list[JobPublic])
-def read_my_jobs(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get jobs posted by the CURRENT logged-in company.
-    """
-    if current_user.role != UserRole.COMPANY or not current_user.company_profile:
-        raise HTTPException(status_code=403, detail="Not a company")
-        
-    # Filter by company_id
-    statement = select(Job).where(Job.company_id == current_user.company_profile.id)
-    jobs = session.exec(statement).all()
-    
-    # Format response
-    public_jobs = []
-    for job in jobs:
-        job_data = job.model_dump()
-        # We know the company name since it's the current user
-        job_data["company_name"] = current_user.company_profile.company_name
-        job_data["company_location"] = current_user.company_profile.location 
-        public_jobs.append(JobPublic(**job_data))
-        
-    return public_jobs
-
 @router.get("/{job_id}", response_model=JobPublic)
 def read_job_by_id(
     job_id: int,
@@ -258,38 +347,6 @@ def read_job_by_id(
         job_data["company_location"] = job.company.location
         
     return JobPublic(**job_data)
-
-
-@router.get("/", response_model=list[JobPublic])
-def read_jobs(
-    session: Session = Depends(get_session),
-    offset: int = 0,
-    limit: int = 20,
-):
-    """
-    Get all active jobs.
-    Public endpoint (no login required to view jobs).
-    """
-    # 1. Query Jobs where is_active is True
-    statement = select(Job).where(Job.is_active == True).offset(offset).limit(limit)
-    jobs = session.exec(statement).all()
-
-    # 2. Enrich with Company Info
-    # We need to manually populate company_name because it's in a different table
-    # SQLModel relationships make this easy: job.company.company_name
-    public_jobs = []
-    for job in jobs:
-        # Create a dict from the job model
-        job_data = job.model_dump()
-        
-        # Add company details if available
-        if job.company:
-            job_data["company_name"] = job.company.company_name
-            job_data["company_location"] = job.company.location
-            
-        public_jobs.append(JobPublic(**job_data))
-
-    return public_jobs
 
 @router.post("/reindex")
 def reindex_all_jobs(
