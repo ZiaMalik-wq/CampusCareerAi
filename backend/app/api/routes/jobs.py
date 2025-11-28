@@ -8,6 +8,7 @@ from app.api.deps import get_current_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
 import logging
+from sqlmodel import select, col, or_
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -78,6 +79,44 @@ def create_new_job(
         company_name=current_user.company_profile.company_name,
         company_location=current_user.company_profile.location
     )
+
+@router.get("/search", response_model=list[JobPublic])
+def search_jobs_sql(
+    q: str,  # The search query (e.g., "Python")
+    session: Session = Depends(get_session),
+    limit: int = 20
+):
+    """
+    Keyword-based Search (SQL).
+    Looks for the query string in Title, Description, or Location.
+    Case-insensitive.
+    """
+    # 1. Build the Query
+    # ILIKE is PostgreSQL specific for "Case Insensitive LIKE"
+    # We use %query% to find the text anywhere in the string
+    query_pattern = f"%{q}%"
+    
+    statement = select(Job).where(
+        or_(
+            col(Job.title).ilike(query_pattern),
+            col(Job.description).ilike(query_pattern),
+            col(Job.location).ilike(query_pattern)
+        )
+    ).where(Job.is_active == True).limit(limit)
+
+    # 2. Execute
+    jobs = session.exec(statement).all()
+
+    # 3. Format Response (Add Company Name)
+    public_jobs = []
+    for job in jobs:
+        job_data = job.model_dump()
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+        public_jobs.append(JobPublic(**job_data))
+        
+    return public_jobs
 
 @router.put("/{job_id}", response_model=JobPublic)
 def update_job(
