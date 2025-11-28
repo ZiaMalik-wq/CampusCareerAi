@@ -64,3 +64,4 @@ class VectorDB:
 
 # Global Instance
 vector_db = VectorDB()
+
