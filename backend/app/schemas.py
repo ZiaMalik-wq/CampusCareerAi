@@ -47,3 +47,17 @@ class JobUpdate(BaseModel):
     salary_range: Optional[str] = None
     max_seats: Optional[int] = None
     is_active: Optional[bool] = None
+    
+class StudentUpdate(BaseModel):
+    full_name: Optional[str] = None
+    university: Optional[str] = None
+    cgpa: Optional[float] = None
+    skills: Optional[str] = None
+
+# Output Schema (Public View)
+class StudentPublic(BaseModel):
+    full_name: str
+    university: Optional[str] = None
+    cgpa: Optional[float] = None
+    skills: Optional[str] = None
+    resume_url: Optional[str] = None

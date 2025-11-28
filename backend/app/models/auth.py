@@ -31,7 +31,8 @@ class Student(SQLModel, table=True):
     
     # Foreign Key linking to User
     user_id: int = Field(foreign_key="users.id")
-    
+    university: Optional[str] = None
+    resume_url: Optional[str] = None
     full_name: str
     cgpa: Optional[float] = None
     skills: Optional[str] = None

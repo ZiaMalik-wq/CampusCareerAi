@@ -7,9 +7,8 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.db.session import check_db_connection
-from app.api.routes import auth
-from app.api.routes import auth, jobs
 from app.core.vector_db import vector_db
+from app.api.routes import auth, jobs, students
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -53,6 +52,7 @@ app.add_middleware(
 # 6. Register Routers
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
+app.include_router(students.router, prefix="/students", tags=["Students"])
 
 # 7. Root Endpoints
 @app.get("/", tags=["Status"])
