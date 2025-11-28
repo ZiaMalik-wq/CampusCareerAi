@@ -10,6 +10,7 @@ from app.core.vector_db import vector_db
 import logging
 from sqlmodel import select, col, or_
 
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -117,6 +118,63 @@ def search_jobs_sql(
         public_jobs.append(JobPublic(**job_data))
         
     return public_jobs
+
+@router.get("/semantic", response_model=list[JobPublic])
+def search_jobs_semantic(
+    q: str, 
+    session: Session = Depends(get_session),
+    limit: int = 10
+):
+    """
+    Semantic Search (AI-Powered).
+    1. Converts query -> Vector.
+    2. Finds nearest neighbors in Qdrant.
+    3. Returns matching jobs from SQL.
+    """
+    if not q:
+        return []
+
+    # 1. Generate Embedding for the query
+    # e.g., "I want to build apps" -> [0.1, -0.5, ...]
+    query_vector = ai_model.generate_embedding(q)
+
+    # 2. Search in Vector DB
+    # Returns a list of ScoredPoint objects (id, score, payload)
+    search_results = vector_db.search(vector=query_vector, limit=limit)
+
+    if not search_results:
+        return []
+
+    # 3. Extract Job IDs from the results
+    # Qdrant returns IDs as integers (because we saved them as ints)
+    job_ids = [result.id for result in search_results]
+
+    # 4. Fetch full Job details from SQL
+    # We use .in_(job_ids) to get them all in one query
+    statement = select(Job).where(Job.id.in_(job_ids))
+    jobs = session.exec(statement).all()
+
+    # 5. Preserve the Order! 
+    # SQL does not return items in the order of the ID list.
+    # Qdrant returned the "best match" first, so we must sort the SQL results to match.
+    jobs_dict = {job.id: job for job in jobs}
+    ordered_jobs = []
+    
+    for result in search_results:
+        job = jobs_dict.get(result.id)
+        if job and job.is_active:
+            # Convert to schema
+            job_data = job.model_dump()
+            if job.company:
+                job_data["company_name"] = job.company.company_name
+                job_data["company_location"] = job.company.location
+            
+            # Optional: You could attach the "match_score" here if you added it to the Schema
+            # job_data["match_score"] = result.score 
+            
+            ordered_jobs.append(JobPublic(**job_data))
+
+    return ordered_jobs
 
 @router.put("/{job_id}", response_model=JobPublic)
 def update_job(

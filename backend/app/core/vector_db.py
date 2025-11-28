@@ -17,8 +17,7 @@ class VectorDB:
                 api_key=settings.QDRANT_API_KEY
             )
             
-            # 2. Ensure the Collection Exists (Auto-setup)
-            # We check if 'campus_career_jobs' exists. If not, we create it.
+            # 2. Ensure the Collection Exists
             try:
                 cls.client.get_collection(settings.QDRANT_COLLECTION)
                 print(f"Connected to Qdrant Collection: {settings.QDRANT_COLLECTION}")
@@ -27,7 +26,7 @@ class VectorDB:
                 cls.client.create_collection(
                     collection_name=settings.QDRANT_COLLECTION,
                     vectors_config=models.VectorParams(
-                        size=384,  # Must match AI model (all-MiniLM-L6-v2)
+                        size=384,  # Matches all-MiniLM-L6-v2
                         distance=models.Distance.COSINE
                     )
                 )
@@ -54,13 +53,14 @@ class VectorDB:
     def search(self, vector: list[float], limit: int = 5):
         """
         Find similar jobs based on a query vector.
+        Using query_points for compatibility.
         """
-        results = self.client.search(
+        response = self.client.query_points(
             collection_name=settings.QDRANT_COLLECTION,
-            query_vector=vector,
+            query=vector, 
             limit=limit
         )
-        return results
+        return response.points
 
 # Global Instance
 vector_db = VectorDB()
