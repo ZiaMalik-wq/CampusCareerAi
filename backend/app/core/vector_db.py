@@ -4,66 +4,64 @@ from functools import lru_cache
 from app.core.config import settings
 
 
-@lru_cache()
-def get_qdrant():
-    """
-    Connect to Qdrant cloud ONLY when first needed.
-    Cached globally.
-    """
-    print("Connecting to Qdrant Cloud...")
-    
-    client = QdrantClient(
-        url=settings.QDRANT_URL,
-        api_key=settings.QDRANT_API_KEY
-    )
+class VectorDB:
+    _instance = None
+    client = None
 
-    # Ensure collection exists
-    try:
-        client.get_collection(settings.QDRANT_COLLECTION)
-        print(f"Collection OK: {settings.QDRANT_COLLECTION}")
-    except Exception:
-        print(f"Collection missing. Creating {settings.QDRANT_COLLECTION}...")
-        client.create_collection(
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(VectorDB, cls).__new__(cls)
+        return cls._instance
+
+    def _connect(self):
+        if self.client is None:
+            print("Connecting to Qdrant...")
+            
+            self.client = QdrantClient(
+                url=settings.QDRANT_URL,
+                api_key=settings.QDRANT_API_KEY
+            )
+
+            try:
+                self.client.get_collection(settings.QDRANT_COLLECTION)
+                print(f"Collection OK: {settings.QDRANT_COLLECTION}")
+            except Exception:
+                self.client.create_collection(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    vectors_config=models.VectorParams(
+                        size=384,
+                        distance=models.Distance.COSINE
+                    )
+                )
+                print("Collection created.")
+
+    def upsert_job(self, job_id: int, vector: list[float], metadata: dict):
+        self._connect()
+        self.client.upsert(
             collection_name=settings.QDRANT_COLLECTION,
-            vectors_config=models.VectorParams(
-                size=384,
-                distance=models.Distance.COSINE
-            )
+            points=[
+                models.PointStruct(
+                    id=job_id,
+                    vector=vector,
+                    payload=metadata
+                )
+            ]
         )
-        print("Collection created.")
 
-    return client
+    def search(self, vector: list[float], limit: int = 5):
+        self._connect()
+        return self.client.query_points(
+            collection_name=settings.QDRANT_COLLECTION,
+            query=vector,
+            limit=limit
+        ).points
 
+    def delete_job(self, job_id: int):
+        self._connect()
+        self.client.delete(
+            collection_name=settings.QDRANT_COLLECTION,
+            points_selector=models.PointIdsList(points=[job_id])
+        )
 
-def qdrant_upsert(job_id: int, vector: list[float], metadata: dict):
-    client = get_qdrant()
-    client.upsert(
-        collection_name=settings.QDRANT_COLLECTION,
-        points=[
-            models.PointStruct(
-                id=job_id,
-                vector=vector,
-                payload=metadata
-            )
-        ]
-    )
-    print(f"Vector saved for job {job_id}")
-
-
-def qdrant_search(vector: list[float], limit: int = 5):
-    client = get_qdrant()
-    result = client.query_points(
-        collection_name=settings.QDRANT_COLLECTION,
-        query=vector,
-        limit=limit
-    )
-    return result.points
-
-
-def qdrant_delete(job_id: int):
-    client = get_qdrant()
-    client.delete(
-        collection_name=settings.QDRANT_COLLECTION,
-        points_selector=models.PointIdsList(points=[job_id])
-    )
-    print(f"Vector deleted for job {job_id}")
+# Global singleton instance
+vector_db = VectorDB()
