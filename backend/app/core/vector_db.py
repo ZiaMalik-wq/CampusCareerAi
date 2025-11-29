@@ -61,7 +61,22 @@ class VectorDB:
             limit=limit
         )
         return response.points
-
+    
+    def delete_job(self, job_id: int):
+        """
+        Remove a job vector from Qdrant.
+        """
+        try:
+            self.client.delete(
+                collection_name=settings.QDRANT_COLLECTION,
+                points_selector=models.PointIdsList(
+                    points=[job_id]
+                )
+            )
+            print(f"Job {job_id} vector deleted from Qdrant.")
+        except Exception as e:
+            print(f"Failed to delete vector for job {job_id}: {e}")
+            
 # Global Instance
 vector_db = VectorDB()
 
