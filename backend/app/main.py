@@ -67,13 +67,3 @@ def read_root():
 @app.get("/health", tags=["Status"])
 def health_check():
     return {"status": "ok"}
-
-if __name__ == "__main__":
-    import uvicorn
-    import os
-    
-    # Get the PORT from Render environment, default to 10000 if not found
-    port = int(os.environ.get("PORT", 10000))
-    
-    # Run the server
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
