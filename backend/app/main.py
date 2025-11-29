@@ -38,9 +38,13 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # 5. Middleware (CORS)
+origins = [
+    "http://localhost:5173",           # Your local frontend
+    "https://your-frontend.vercel.app" # Your future deployed frontend
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, change this to your Vercel URL
+    allow_origins=origins,  # In production, change this to your Vercel URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
