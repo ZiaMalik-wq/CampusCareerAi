@@ -14,6 +14,23 @@ router = APIRouter()
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+@router.get("/profile", response_model=StudentPublic)
+def get_student_profile(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get the current logged-in student's full profile details.
+    Used to pre-fill the 'Edit Profile' form in the Frontend.
+    """
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students have profiles")
+    
+    student = current_user.student_profile
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+
+    return student
+
 @router.put("/profile", response_model=StudentPublic)
 def update_student_profile(
     student_in: StudentUpdate,

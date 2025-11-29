@@ -3,12 +3,13 @@ from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.models.job import Job
-from app.schemas import JobCreate, JobPublic, JobUpdate
+from app.schemas import JobCreate, JobPublic, JobUpdate, JobRecommendation
 from app.api.deps import get_current_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
 import logging
 from sqlmodel import select, col, or_
+from app.core.embedding_utils import build_student_embedding_text, build_job_embedding_text
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,12 @@ def create_new_job(
     
     try:
         # A. Prepare text for the AI (Combine important fields)
-        text_to_embed = f"{new_job.title}. {new_job.description}. {new_job.job_type}. {new_job.location}"
+        text_to_embed = build_job_embedding_text(
+            title=new_job.title,
+            description=new_job.description,
+            job_type=new_job.job_type,
+            location=new_job.location
+        )
         
         # B. Generate Vector (List of 384 floats)
         vector = ai_model.generate_embedding(text_to_embed)
@@ -233,6 +239,114 @@ def search_jobs_hybrid(
         
     return public_jobs
 
+
+@router.get("/recommendations", response_model=list[JobRecommendation])
+def get_job_recommendations(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    limit: int = 5
+):
+    """
+    Advanced AI Recommendation Engine.
+    Implements Weighted Scoring: Semantic (50%) + Skill Overlap (30%) + Location (20%)
+    """
+    # 1. Validation
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students get recommendations")
+    
+    student = current_user.student_profile
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+
+    # 2. Prepare Skills List (Crucial for the Highlighter)
+    student_skills_list = []
+    if student.skills:
+        student_skills_list = [s.strip().lower() for s in student.skills.split(",") if s.strip()]
+
+    # 3. Build Text for AI Embedding
+    text_to_embed = build_student_embedding_text(student.skills, student.resume_text)
+    
+    if not text_to_embed:
+        # Fallback: If no data, return empty list (or latest jobs if you prefer)
+        return []
+
+    # 4. Get Candidates from Qdrant
+    query_vector = ai_model.generate_embedding(text_to_embed)
+    search_results = vector_db.search(vector=query_vector, limit=20)
+    
+    if not search_results:
+        return []
+
+    scores_map = {point.id: point.score for point in search_results}
+    job_ids = list(scores_map.keys())
+
+    # 5. Fetch Job Data from SQL
+    statement = select(Job).where(Job.id.in_(job_ids))
+    jobs = session.exec(statement).all()
+
+    final_recommendations = []
+
+    for job in jobs:
+        if not job.is_active:
+            continue
+        
+        # A. Semantic Score (0.0 to 1.0)
+        semantic_score = scores_map.get(job.id, 0)
+
+        # B. Skill Overlap Score
+        # We check if the student's specific skills appear in the Job text
+        job_text = (job.title + " " + job.description).lower()
+        matching_skills = []
+        missing_skills = []
+        
+        for skill in student_skills_list:
+            if skill in job_text:
+                matching_skills.append(skill)
+            else:
+                missing_skills.append(skill)
+        
+        skill_score = 0
+        if student_skills_list:
+            skill_score = len(matching_skills) / len(student_skills_list)
+
+        # C. Location Score
+        location_score = 0
+        if student.city and job.location:
+            if student.city.lower() in job.location.lower():
+                location_score = 1.0
+            elif "remote" in job.location.lower():
+                location_score = 0.8 # Remote is good too
+        
+        # 50% AI + 30% Skills + 20% Location
+        final_score = (semantic_score * 0.5) + (skill_score * 0.3) + (location_score * 0.2)
+        final_percent = round(final_score * 100, 1)
+        reason = f"High semantic match ({round(semantic_score*100)}%). "
+        if matching_skills:
+            # Show first 3 matching skills in the reason
+            reason += f"Matches skills: {', '.join(matching_skills[:3])}. "
+        if location_score >= 0.8:
+            reason += "Location/Remote match."
+
+        # Prepare Response Object
+        job_data = job.model_dump()
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+        
+        rec = JobRecommendation(
+            **job_data,
+            match_score=final_percent,
+            matching_skills=matching_skills,
+            missing_skills=missing_skills,
+            why=reason
+        )
+        final_recommendations.append(rec)
+
+    # 6. Final Sort by our NEW Weighted Score
+    final_recommendations.sort(key=lambda x: x.match_score, reverse=True)
+
+    return final_recommendations[:limit]
+
 @router.get("/my-jobs", response_model=list[JobPublic])
 def read_my_jobs(
     session: Session = Depends(get_session),
@@ -328,6 +442,40 @@ def update_job(
     
     return job
 
+@router.delete("/{job_id}")
+def delete_job(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a job posting.
+    Removes it from both SQL (Postgres) and Vector DB (Qdrant).
+    RESTRICTION: Only the Company owner can delete.
+    """
+    # 1. Find the Job in SQL
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # 2. Security Check (Ownership)
+    # Ensure user is a company AND owns this specific job
+    if current_user.role != UserRole.COMPANY or not current_user.company_profile:
+         raise HTTPException(status_code=403, detail="Not authorized")
+         
+    if job.company_id != current_user.company_profile.id:
+        raise HTTPException(status_code=403, detail="You do not own this job")
+
+    # 3. Delete from SQL
+    session.delete(job)
+    session.commit()
+
+    # 4. Delete from Qdrant (AI Memory)
+    # We do this AFTER SQL commit to ensure we don't delete vector if SQL fails
+    vector_db.delete_job(job_id)
+
+    return {"message": "Job deleted successfully"}
+
 @router.get("/{job_id}", response_model=JobPublic)
 def read_job_by_id(
     job_id: int,
@@ -365,10 +513,15 @@ def reindex_all_jobs(
     
     for job in jobs:
         # 1. Generate text
-        text = f"{job.title}. {job.description}. {job.job_type}. {job.location}"
+        text_to_embed = build_job_embedding_text(
+            title=job.title,
+            description=job.description,
+            job_type=job.job_type,
+            location=job.location,
+        )
         
         # 2. Embed
-        vector = ai_model.generate_embedding(text)
+        vector = ai_model.generate_embedding(text_to_embed)
         
         # 3. Upsert
         # We need to fetch company name manually since it might not be loaded
