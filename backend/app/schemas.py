@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr
 from app.models.auth import UserRole
 from typing import Optional
 from app.models.job import Job
+from typing import List, Optional
 
 # 1. Schema for User Registration (What the Frontend sends)
 class UserCreate(BaseModel):
@@ -36,6 +37,7 @@ class JobPublic(JobCreate):
     company_id: int
     company_name: Optional[str] = None
     company_location: Optional[str] = None
+    match_score: Optional[float] = None
     created_at: datetime
     is_active: bool
 
@@ -53,6 +55,7 @@ class StudentUpdate(BaseModel):
     university: Optional[str] = None
     cgpa: Optional[float] = None
     skills: Optional[str] = None
+    city: Optional[str] = None 
 
 # Output Schema (Public View)
 class StudentPublic(BaseModel):
@@ -61,3 +64,18 @@ class StudentPublic(BaseModel):
     cgpa: Optional[float] = None
     skills: Optional[str] = None
     resume_url: Optional[str] = None
+    city: Optional[str] = None
+    
+class JobRecommendation(JobPublic):
+    match_score: float
+    matching_skills: List[str] = []
+    missing_skills: List[str] = []
+    why: Optional[str] = None
+
+class ChatQuery(BaseModel):
+    query: str
+
+class ChatResponse(BaseModel):
+    answer: str
+    extracted_filters: dict
+    results: List[JobPublic]
