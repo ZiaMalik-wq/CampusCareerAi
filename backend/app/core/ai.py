@@ -1,33 +1,22 @@
 from sentence_transformers import SentenceTransformer
+from functools import lru_cache
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 
-class AIModel:
-    _instance = None
-    model = None
+@lru_cache()
+def get_model():
+    """
+    Load the SentenceTransformer model on first request.
+    Cached for entire app lifecycle.
+    """
+    print(f"Loading AI model: {MODEL_NAME}")
+    return SentenceTransformer(MODEL_NAME)
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(AIModel, cls).__new__(cls)
-            # DO NOT LOAD MODEL HERE. Just create the instance.
-        return cls._instance
 
-    def _load_model(self):
-        """Load the model ONLY when it is actually needed"""
-        if self.model is None:
-            print(f"Loading AI Model ({MODEL_NAME})...")
-            self.model = SentenceTransformer(MODEL_NAME)
-            print("AI Model loaded!")
+def generate_embedding(text: str) -> list[float]:
+    if not text or not text.strip():
+        return []
 
-    def generate_embedding(self, text: str) -> list[float]:
-        # Trigger the load here (Lazy Loading)
-        self._load_model()
-        
-        if not text or not text.strip():
-            return []
-        
-        # Convert to standard list (not numpy)
-        embedding = self.model.encode(text)
-        return embedding.tolist()
-
-ai_model = AIModel()
+    model = get_model()
+    vector = model.encode(text)
+    return vector.tolist()

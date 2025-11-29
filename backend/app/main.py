@@ -14,15 +14,12 @@ from app.api.routes import auth, jobs, chat, students
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 2. Define Lifespan (Startup & Shutdown)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Application is starting up...")
-    check_db_connection()
-    # Trigger Qdrant Connection
-    _ = vector_db
+    logger.info("App starting (light startup)")
     yield
-    logger.info("Application is shutting down...")
+    logger.info("App shutdown")
+
 
 # 3. Initialize App
 app = FastAPI(
