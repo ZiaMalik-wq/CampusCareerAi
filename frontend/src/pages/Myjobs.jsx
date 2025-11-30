@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import JobCard from '../components/JobCard';
-import { AuthContext } from '../context/AuthContext';
-import toast, { Toaster } from 'react-hot-toast';
-import { 
-  PlusCircle, 
-  Briefcase, 
-  TrendingUp, 
-  Users, 
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
+import JobCard from "../components/JobCard";
+import { AuthContext } from "../context/AuthContext";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  PlusCircle,
+  Briefcase,
+  TrendingUp,
+  Users,
   Eye,
   Edit3,
   Trash2,
@@ -18,31 +18,31 @@ import {
   Clock,
   Search,
   Filter,
-  ArrowUpRight
-} from 'lucide-react';
+  ArrowUpRight,
+} from "lucide-react";
 
 const MyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('all'); // all, active, inactive
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeDropdown, setActiveDropdown] = useState(null);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Security Check
-    if (user && user.role !== 'company' && user.role !== 'COMPANY') {
-      navigate('/');
+    if (user && user.role !== "company" && user.role !== "COMPANY") {
+      navigate("/");
       return;
     }
 
     const fetchMyJobs = async () => {
       try {
-        const response = await api.get('/jobs/my-jobs');
+        const response = await api.get("/jobs/my-jobs");
         setJobs(response.data);
       } catch (err) {
-        console.error('Error fetching my jobs:', err);
+        console.error("Error fetching my jobs:", err);
       } finally {
         setLoading(false);
       }
@@ -53,31 +53,40 @@ const MyJobs = () => {
 
   const handleToggleStatus = async (jobId, currentStatus) => {
     // Show loading toast
-    const loadingToast = toast.loading(currentStatus ? 'Pausing job...' : 'Activating job...');
-    
+    const loadingToast = toast.loading(
+      currentStatus ? "Pausing job..." : "Activating job..."
+    );
+
     try {
       // Using PUT endpoint to update job status
-      const jobToUpdate = jobs.find(j => j.id === jobId);
+      const jobToUpdate = jobs.find((j) => j.id === jobId);
       await api.put(`/jobs/${jobId}`, {
         ...jobToUpdate,
-        is_active: !currentStatus
+        is_active: !currentStatus,
       });
-      
+
       // Update local state immediately
-      setJobs(prevJobs => prevJobs.map(job => 
-        job.id === jobId ? { ...job, is_active: !currentStatus } : job
-      ));
-      
+      setJobs((prevJobs) =>
+        prevJobs.map((job) =>
+          job.id === jobId ? { ...job, is_active: !currentStatus } : job
+        )
+      );
+
       // Show success toast
-      toast.success(`Job ${!currentStatus ? 'activated' : 'paused'} successfully!`, {
-        id: loadingToast,
-        duration: 3000,
-      });
+      toast.success(
+        `Job ${!currentStatus ? "activated" : "paused"} successfully!`,
+        {
+          id: loadingToast,
+          duration: 3000,
+        }
+      );
     } catch (err) {
-      console.error('Error toggling status:', err);
-      
+      console.error("Error toggling status:", err);
+
       // Show error toast
-      const errorMsg = err.response?.data?.detail || 'Failed to update job status. Please try again.';
+      const errorMsg =
+        err.response?.data?.detail ||
+        "Failed to update job status. Please try again.";
       toast.error(errorMsg, {
         id: loadingToast,
         duration: 4000,
@@ -86,20 +95,25 @@ const MyJobs = () => {
   };
 
   // Calculate stats
-  const activeJobs = jobs.filter(job => job.is_active).length;
-  const totalApplications = jobs.reduce((sum, job) => sum + (job.applications_count || 0), 0);
+  const activeJobs = jobs.filter((job) => job.is_active).length;
+  const totalApplications = jobs.reduce(
+    (sum, job) => sum + (job.applications_count || 0),
+    0
+  );
   const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0);
 
   // Filter jobs
-  const filteredJobs = jobs.filter(job => {
-    const matchesStatus = filterStatus === 'all' || 
-      (filterStatus === 'active' && job.is_active) || 
-      (filterStatus === 'inactive' && !job.is_active);
-    
-    const matchesSearch = searchQuery === '' || 
+  const filteredJobs = jobs.filter((job) => {
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && job.is_active) ||
+      (filterStatus === "inactive" && !job.is_active);
+
+    const matchesSearch =
+      searchQuery === "" ||
       job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.company?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesStatus && matchesSearch;
   });
 
@@ -109,26 +123,32 @@ const MyJobs = () => {
   };
 
   const handleDelete = async (jobId) => {
-    if (window.confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this job posting? This action cannot be undone."
+      )
+    ) {
       // Show loading toast
-      const loadingToast = toast.loading('Deleting job...');
-      
+      const loadingToast = toast.loading("Deleting job...");
+
       try {
         await api.delete(`/jobs/${jobId}`);
-        
+
         // Update UI immediately by removing from state
-        setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
-        
+        setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+
         // Show success toast
-        toast.success('Job deleted successfully!', {
+        toast.success("Job deleted successfully!", {
           id: loadingToast,
           duration: 3000,
         });
       } catch (err) {
-        console.error('Error deleting job:', err);
-        
+        console.error("Error deleting job:", err);
+
         // Show error toast
-        const errorMsg = err.response?.data?.detail || 'Failed to delete job. Please try again.';
+        const errorMsg =
+          err.response?.data?.detail ||
+          "Failed to delete job. Please try again.";
         toast.error(errorMsg, {
           id: loadingToast,
           duration: 4000,
@@ -140,40 +160,39 @@ const MyJobs = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
       {/* Toast Notifications */}
-      <Toaster 
+      <Toaster
         position="top-center"
         toastOptions={{
           success: {
             style: {
-              background: '#10b981',
-              color: '#fff',
+              background: "#10b981",
+              color: "#fff",
             },
             iconTheme: {
-              primary: '#fff',
-              secondary: '#10b981',
+              primary: "#fff",
+              secondary: "#10b981",
             },
           },
           error: {
             style: {
-              background: '#ef4444',
-              color: '#fff',
+              background: "#ef4444",
+              color: "#fff",
             },
             iconTheme: {
-              primary: '#fff',
-              secondary: '#ef4444',
+              primary: "#fff",
+              secondary: "#ef4444",
             },
           },
           loading: {
             style: {
-              background: '#3b82f6',
-              color: '#fff',
+              background: "#3b82f6",
+              color: "#fff",
             },
           },
         }}
       />
-      
+
       <div className="container mx-auto max-w-7xl">
-        
         {/* Enhanced Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
@@ -182,13 +201,17 @@ const MyJobs = () => {
                 <Briefcase className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-gray-900">Company Dashboard</h1>
-                <p className="text-gray-600 mt-1">Manage and track your job postings</p>
+                <h1 className="text-4xl font-bold text-gray-900">
+                  Company Dashboard
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Manage and track your job postings
+                </p>
               </div>
             </div>
-            
-            <button 
-              onClick={() => navigate('/post-job')}
+
+            <button
+              onClick={() => navigate("/post-job")}
               className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold"
             >
               <PlusCircle className="w-5 h-5" />
@@ -203,12 +226,18 @@ const MyJobs = () => {
                 <div className="p-3 bg-blue-100 rounded-xl">
                   <Briefcase className="w-6 h-6 text-blue-600" />
                 </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Jobs</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Active Jobs
+                </span>
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">{activeJobs}</div>
-                  <div className="text-sm text-gray-500 mt-1">of {jobs.length} total</div>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {activeJobs}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    of {jobs.length} total
+                  </div>
                 </div>
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
@@ -219,12 +248,18 @@ const MyJobs = () => {
                 <div className="p-3 bg-purple-100 rounded-xl">
                   <Users className="w-6 h-6 text-purple-600" />
                 </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Applications</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Applications
+                </span>
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">{totalApplications}</div>
-                  <div className="text-sm text-gray-500 mt-1">total received</div>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {totalApplications}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    total received
+                  </div>
                 </div>
                 <ArrowUpRight className="w-5 h-5 text-purple-600" />
               </div>
@@ -235,11 +270,15 @@ const MyJobs = () => {
                 <div className="p-3 bg-green-100 rounded-xl">
                   <Eye className="w-6 h-6 text-green-600" />
                 </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Views</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Total Views
+                </span>
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">{totalViews}</div>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {totalViews}
+                  </div>
                   <div className="text-sm text-gray-500 mt-1">impressions</div>
                 </div>
                 <TrendingUp className="w-5 h-5 text-green-600" />
@@ -266,32 +305,32 @@ const MyJobs = () => {
             {/* Filter Tabs */}
             <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
               <button
-                onClick={() => setFilterStatus('all')}
+                onClick={() => setFilterStatus("all")}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
-                  filterStatus === 'all'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  filterStatus === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 All ({jobs.length})
               </button>
               <button
-                onClick={() => setFilterStatus('active')}
+                onClick={() => setFilterStatus("active")}
                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-                  filterStatus === 'active'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  filterStatus === "active"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 Active ({activeJobs})
               </button>
               <button
-                onClick={() => setFilterStatus('inactive')}
+                onClick={() => setFilterStatus("inactive")}
                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-                  filterStatus === 'inactive'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  filterStatus === "inactive"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 <XCircle className="w-4 h-4 text-gray-600" />
@@ -310,7 +349,9 @@ const MyJobs = () => {
                 <Briefcase className="w-6 h-6 text-blue-600 animate-pulse" />
               </div>
             </div>
-            <p className="text-gray-500 mt-6 animate-pulse font-medium">Loading your jobs...</p>
+            <p className="text-gray-500 mt-6 animate-pulse font-medium">
+              Loading your jobs...
+            </p>
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
@@ -318,18 +359,18 @@ const MyJobs = () => {
               <Briefcase className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              {searchQuery || filterStatus !== 'all' 
-                ? 'No jobs match your filters' 
+              {searchQuery || filterStatus !== "all"
+                ? "No jobs match your filters"
                 : "You haven't posted any jobs yet"}
             </h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              {searchQuery || filterStatus !== 'all'
+              {searchQuery || filterStatus !== "all"
                 ? "Try adjusting your search or filter settings."
                 : "Start attracting top talent by posting your first job opportunity."}
             </p>
-            {(!searchQuery && filterStatus === 'all') && (
-              <button 
-                onClick={() => navigate('/post-job')}
+            {!searchQuery && filterStatus === "all" && (
+              <button
+                onClick={() => navigate("/post-job")}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition inline-flex items-center gap-2"
               >
                 <PlusCircle className="w-5 h-5" />
@@ -340,7 +381,8 @@ const MyJobs = () => {
         ) : (
           <div>
             <div className="mb-4 text-gray-600 text-sm font-medium">
-              Showing {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
+              Showing {filteredJobs.length}{" "}
+              {filteredJobs.length === 1 ? "job" : "jobs"}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredJobs.map((job) => (
@@ -348,7 +390,7 @@ const MyJobs = () => {
                   {/* Job Card Wrapper with Status Badge */}
                   <div className="relative rounded-2xl overflow-hidden">
                     <JobCard job={job} />
-                    
+
                     {/* Status Badge Overlay - Below job type badge, aligned properly */}
                     <div className="absolute top-14 right-6 z-10">
                       {job.is_active ? (
@@ -363,7 +405,7 @@ const MyJobs = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Action Overlay on Hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
                       <div className="w-full grid grid-cols-2 gap-2 pointer-events-auto">
@@ -379,7 +421,9 @@ const MyJobs = () => {
                             e.stopPropagation();
                             // For now, we'll use the job details view as edit
                             // You can create a separate edit page later
-                            alert(`Edit functionality coming soon!\n\nFor now, you can:\n1. View the job details\n2. Create a new job with updated info\n3. Delete the old one\n\nJob ID: ${job.id}`);
+                            alert(
+                              `Edit functionality coming soon!\n\nFor now, you can:\n1. View the job details\n2. Create a new job with updated info\n3. Delete the old one\n\nJob ID: ${job.id}`
+                            );
                           }}
                           className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
                         >
@@ -387,11 +431,13 @@ const MyJobs = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleToggleStatus(job.id, job.is_active)}
+                          onClick={() =>
+                            handleToggleStatus(job.id, job.is_active)
+                          }
                           className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition text-sm ${
                             job.is_active
-                              ? 'bg-orange-600 text-white hover:bg-orange-700'
-                              : 'bg-green-600 text-white hover:bg-green-700'
+                              ? "bg-orange-600 text-white hover:bg-orange-700"
+                              : "bg-green-600 text-white hover:bg-green-700"
                           }`}
                         >
                           {job.is_active ? (

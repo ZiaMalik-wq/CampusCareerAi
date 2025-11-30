@@ -7,7 +7,6 @@ import {
   Database,
   Layers,
   X,
-  Filter,
   SlidersHorizontal,
   TrendingUp,
 } from "lucide-react";
@@ -27,7 +26,6 @@ const Jobs = () => {
     setLoading(true);
     setError(null);
 
-    // Determine values to use: Use the override if provided, otherwise use current state
     const queryToUse = queryOverride !== null ? queryOverride : searchQuery;
     const modeToUse = modeOverride !== null ? modeOverride : searchMode;
 
@@ -47,12 +45,8 @@ const Jobs = () => {
         }
       }
 
-      console.log(`Fetching from: ${endpoint} with params:`, params);
-
       const response = await api.get(endpoint, { params });
       setJobs(response.data);
-
-      // Update isSearching based on the query we actually used
       setIsSearching(!!queryToUse.trim());
     } catch (err) {
       console.error("Error fetching jobs:", err);
@@ -72,20 +66,17 @@ const Jobs = () => {
   };
 
   const handleClearSearch = () => {
-    setSearchQuery(""); // Update UI state
+    setSearchQuery("");
     fetchJobs("");
   };
 
-  // UX Improvement 3: Immediate Search on Mode Change
   const handleModeChange = (newMode) => {
-    setSearchMode(newMode); // Update UI state
-    // If there is text, trigger search immediately with new mode
+    setSearchMode(newMode);
     if (searchQuery.trim()) {
       fetchJobs(null, newMode);
     }
   };
 
-  // Helper for UI Modes
   const getModeInfo = (mode) => {
     const modes = {
       hybrid: {
@@ -169,7 +160,6 @@ const Jobs = () => {
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 mb-8">
           <form onSubmit={handleSearchSubmit} className="space-y-4">
             <div className="flex flex-col lg:flex-row gap-3">
-              {/* Search Input */}
               <div className="flex-grow relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 transition group-focus-within:text-blue-600" />
                 <input
@@ -194,7 +184,6 @@ const Jobs = () => {
                 )}
               </div>
 
-              {/* Mode Selector */}
               <div className="flex gap-2 lg:min-w-[420px]">
                 {["hybrid", "semantic", "sql"].map((mode) => {
                   const info = getModeInfo(mode);
@@ -205,7 +194,6 @@ const Jobs = () => {
                     <button
                       key={mode}
                       type="button"
-                      // UX Fix: Use the new handler
                       onClick={() => handleModeChange(mode)}
                       className={`flex-1 px-4 py-4 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border-2 ${
                         isActive
@@ -222,7 +210,6 @@ const Jobs = () => {
                 })}
               </div>
 
-              {/* Search Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -242,7 +229,6 @@ const Jobs = () => {
               </button>
             </div>
 
-            {/* Mode Info Bar */}
             <div
               className={`flex items-start gap-3 p-4 rounded-2xl ${currentMode.bgClass} border ${currentMode.borderClass}`}
             >
@@ -271,7 +257,6 @@ const Jobs = () => {
             </div>
           </form>
 
-          {/* Quick Search Suggestions */}
           {!searchQuery && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <div className="flex items-center gap-2 mb-3">
@@ -290,7 +275,6 @@ const Jobs = () => {
                   <button
                     key={suggestion}
                     type="button"
-                    // UX Fix: Update UI state AND fetch immediately
                     onClick={() => {
                       setSearchQuery(suggestion);
                       fetchJobs(suggestion);
@@ -330,7 +314,7 @@ const Jobs = () => {
             </h3>
             <p className="text-red-700">{error}</p>
             <button
-              onClick={() => fetchJobs()} // Simple retry
+              onClick={() => fetchJobs()}
               className="mt-6 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition"
             >
               Try Again
@@ -346,8 +330,8 @@ const Jobs = () => {
             </h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
               {isSearching
-                ? "Try adjusting your search terms or switching to a different search mode."
-                : "No jobs are currently available. Check back soon!"}
+                ? "Try adjusting your search terms."
+                : "No jobs are currently available."}
             </p>
             {isSearching && (
               <button
@@ -360,7 +344,6 @@ const Jobs = () => {
           </div>
         ) : (
           <div>
-            {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -370,7 +353,6 @@ const Jobs = () => {
                   {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
                 </span>
               </div>
-
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-4 py-2 border-2 border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition flex items-center gap-2"
@@ -379,8 +361,6 @@ const Jobs = () => {
                 Filters
               </button>
             </div>
-
-            {/* Job Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {jobs.map((job) => (
                 <JobCard key={job.id} job={job} />
