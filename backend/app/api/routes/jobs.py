@@ -375,30 +375,36 @@ def read_my_jobs(
         
     return public_jobs
 
-
 @router.get("/", response_model=list[JobPublic])
 def read_jobs(
     session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_user),  # Add optional auth
     offset: int = 0,
     limit: int = 20,
 ):
     """
     Get all active jobs.
     Public endpoint (no login required to view jobs).
+    - For companies: Excludes their own jobs
+    - For students/guests: Shows all jobs
     """
-    # 1. Query Jobs where is_active is True
-    statement = select(Job).where(Job.is_active == True).offset(offset).limit(limit)
+    # 1. Base Query: Active jobs only
+    statement = select(Job).where(Job.is_active == True)
+    
+    # 2. Filter out company's own jobs if user is a company
+    if current_user and current_user.role == UserRole.COMPANY:
+        if current_user.company_profile:
+            statement = statement.where(Job.company_id != current_user.company_profile.id)
+    
+    # 3. Apply pagination
+    statement = statement.offset(offset).limit(limit)
     jobs = session.exec(statement).all()
 
-    # 2. Enrich with Company Info
-    # We need to manually populate company_name because it's in a different table
-    # SQLModel relationships make this easy: job.company.company_name
+    # 4. Enrich with Company Info
     public_jobs = []
     for job in jobs:
-        # Create a dict from the job model
         job_data = job.model_dump()
         
-        # Add company details if available
         if job.company:
             job_data["company_name"] = job.company.company_name
             job_data["company_location"] = job.company.location
