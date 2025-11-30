@@ -1,22 +1,16 @@
-import shutil
-import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import Session
 from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.api.deps import get_current_user
 from app.schemas import StudentUpdate, StudentPublic
 from app.core.pdf_utils import extract_text_from_pdf
+from app.core.supabase import supabase
 
 router = APIRouter()
 
-# Setup Upload Directory
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 @router.get("/profile", response_model=StudentPublic)
 def get_student_profile(
-    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     if current_user.role != UserRole.STUDENT:
@@ -27,13 +21,23 @@ def get_student_profile(
         raise HTTPException(status_code=404, detail="Student profile not found")
     
     if student.resume_url:
-        # We assume student.resume_url is stored as "uploads/filename.pdf"
-        # We strip any leading slash just in case
-        clean_path = student.resume_url.lstrip("/")
-        
-        # Build the full URL using the current request's base URL
-        full_url = str(request.base_url) + clean_path
-        student.resume_url = full_url
+        try:
+            # We store the path (e.g. "5/cv.pdf") in the DB
+            path = student.resume_url
+            
+            # Request a temporary public link valid for 1 hour (3600 seconds)
+            res = supabase.storage.from_("resumes").create_signed_url(path, 3600)
+            
+            # Handle response structure (it might be a dict or string depending on version)
+            if isinstance(res, dict) and "signedURL" in res:
+                student.resume_url = res["signedURL"]
+            elif isinstance(res, str):
+                student.resume_url = res
+                
+        except Exception as e:
+            print(f"Error generating signed URL: {e}")
+            # If error, keep the internal path or set to None so UI doesn't break
+            pass
 
     return student
 
@@ -64,10 +68,8 @@ def update_student_profile(
 
     return student
 
-
 @router.post("/resume")
-def upload_resume(
-    request: Request,
+async def upload_resume(
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
@@ -78,32 +80,42 @@ def upload_resume(
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    # 1. Save file to disk
-    filename = f"{current_user.id}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # 2. Extract Text
-    extracted_text = extract_text_from_pdf(file_path)
+    # 1. Read file into memory
+    file_content = await file.read()
     
-    if not extracted_text:
-        # Warning: This happens if the PDF is just an image (scanned)
-        print("Warning: No text extracted. PDF might be an image.")
+    # 2. Create path: "user_id/filename.pdf"
+    safe_filename = file.filename.replace(" ", "_")
+    file_path = f"{current_user.id}/{safe_filename}"
 
-    # 3. Update Database (Url + Text)
+    try:
+        # 3. Upload to Supabase Private Bucket
+        supabase.storage.from_("resumes").upload(
+            file=file_content, 
+            path=file_path, 
+            file_options={"content-type": "application/pdf", "upsert": "true"}
+        )
+    except Exception as e:
+        print(f"Upload Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload to cloud storage")
+
+    # 4. Extract text for AI
+    extracted_text = extract_text_from_pdf(file_content)
+
+    # 5. Update Database with PATH (not URL)
     student = current_user.student_profile
     student.resume_url = file_path
     student.resume_text = extracted_text
+    
     session.add(student)
     session.commit()
     session.refresh(student)
-    
-    full_url = str(request.base_url) + student.resume_url
+
+    # 6. Generate Signed URL for immediate response
+    signed_url_response = supabase.storage.from_("resumes").create_signed_url(file_path, 600)
+    final_url = signed_url_response.get("signedURL") if isinstance(signed_url_response, dict) else signed_url_response
+
     return {
-        "message": "Resume uploaded and processed successfully", 
-        "filename": filename,
-        "resume_url": full_url,
-        "text_preview": extracted_text[:100] + "..." # Show first 100 chars to prove it worked
+        "message": "Resume uploaded successfully", 
+        "resume_url": final_url,
+        "text_preview": extracted_text[:100] + "..."
     }

@@ -7,21 +7,20 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.db.session import check_db_connection
-from app.core.vector_db import vector_db
+from app.core.vector_db import vector_db 
 from app.api.routes import auth, jobs, chat, students
-import os
-from fastapi.staticfiles import StaticFiles
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 2. Define Lifespan (Startup & Shutdown)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("App starting (light startup)")
+    logger.info("App starting...")
+    check_db_connection()
     yield
-    logger.info("App shutdown")
-
+    logger.info("🛑 App shutdown")
 
 # 3. Initialize App
 app = FastAPI(
@@ -29,13 +28,6 @@ app = FastAPI(
     version="1.0",
     lifespan=lifespan
 )
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_ROOT = os.path.dirname(BASE_DIR) 
-UPLOAD_DIR = os.path.join(BACKEND_ROOT, "uploads")
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # 4. Global Exception Handler
 @app.exception_handler(Exception)
@@ -49,7 +41,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 5. Middleware (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, change this to your Vercel URL
+    allow_origins=["*"],  # Allows all origins (Good for Dev/Hackathons)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,7 +54,8 @@ app.include_router(students.router, prefix="/students", tags=["Students"])
 app.include_router(chat.router, prefix="/chat", tags=["AI Chat"])
 
 # 7. Root Endpoints
-@app.get("/", tags=["Status"])
+# Allow HEAD for Render Health Checks
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Status"])
 def read_root():
     return {
         "project": settings.PROJECT_NAME, 
@@ -78,5 +71,5 @@ if __name__ == "__main__":
     import os
     import uvicorn
 
-    port = int(os.environ.get("PORT", 8000))  # fallback for local dev
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)

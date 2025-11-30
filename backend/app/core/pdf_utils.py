@@ -1,21 +1,31 @@
 import pdfplumber
+import io
 
-def extract_text_from_pdf(file_path: str) -> str:
+def extract_text_from_pdf(file_bytes: bytes) -> str:
     """
-    Opens a PDF file and extracts all text.
+    Extracts text from a PDF file in memory (bytes).
     """
     text_content = []
     
     try:
-        with pdfplumber.open(file_path) as pdf:
-            for page in pdf.pages:
-                # Extract text from each page
-                page_text = page.extract_text()
-                if page_text:
-                    text_content.append(page_text)
+        print(f"PDF Size: {len(file_bytes)} bytes") # Debug log
         
-        # Join all pages into one big string
-        return "\n".join(text_content)
+        # Wrap bytes in BytesIO
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            print(f"Found {len(pdf.pages)} pages") # Debug log
+            
+            for i, page in enumerate(pdf.pages):
+                text = page.extract_text()
+                if text:
+                    # Clean up text slightly
+                    text = text.strip()
+                    text_content.append(text)
+                    print(f"Page {i+1}: Extracted {len(text)} chars")
+                else:
+                    print(f"Page {i+1}: No text found (Image?)")
+        
+        full_text = "\n".join(text_content)
+        return full_text
     
     except Exception as e:
         print(f"Error reading PDF: {e}")

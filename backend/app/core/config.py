@@ -6,13 +6,17 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
     
+    # Qdrant
     QDRANT_URL: str
     QDRANT_API_KEY: str
     QDRANT_COLLECTION: str = "campus_career_jobs"
     
-    # NEW FIELDS FOR JWT
+    # JWT
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Token expires in 30 mins
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 
+    
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
 
     class Config:
         env_file = ".env"
