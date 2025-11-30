@@ -65,15 +65,7 @@ const JobDetails = () => {
   const isStudent = user?.role === "student" || user?.role === "STUDENT";
   const isCompany = user?.role === "company" || user?.role === "COMPANY";
   const isOwner = isCompany && user?.company_profile?.id === job?.company_id;
-
-  // Debug logging (remove in production)
-  console.log("Debug Info:", {
-    userRole: user?.role,
-    userCompanyProfileId: user?.company_profile?.id,
-    jobCompanyId: job?.company_id,
-    isOwner: isOwner,
-  });
-
+  
   if (loading)
     return (
       <div className="flex flex-col justify-center items-center h-[80vh]">
