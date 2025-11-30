@@ -9,6 +9,8 @@ from app.core.config import settings
 from app.db.session import check_db_connection
 from app.core.vector_db import vector_db
 from app.api.routes import auth, jobs, chat, students
+import os
+from fastapi.staticfiles import StaticFiles
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,13 @@ app = FastAPI(
     version="1.0",
     lifespan=lifespan
 )
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_ROOT = os.path.dirname(BASE_DIR) 
+UPLOAD_DIR = os.path.join(BACKEND_ROOT, "uploads")
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # 4. Global Exception Handler
 @app.exception_handler(Exception)

@@ -1,6 +1,6 @@
 import shutil
 import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlmodel import Session
 from app.db.session import get_session
 from app.models.auth import User, UserRole
@@ -16,18 +16,24 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/profile", response_model=StudentPublic)
 def get_student_profile(
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get the current logged-in student's full profile details.
-    Used to pre-fill the 'Edit Profile' form in the Frontend.
-    """
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students have profiles")
     
     student = current_user.student_profile
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
+    
+    if student.resume_url:
+        # We assume student.resume_url is stored as "uploads/filename.pdf"
+        # We strip any leading slash just in case
+        clean_path = student.resume_url.lstrip("/")
+        
+        # Build the full URL using the current request's base URL
+        full_url = str(request.base_url) + clean_path
+        student.resume_url = full_url
 
     return student
 
@@ -61,6 +67,7 @@ def update_student_profile(
 
 @router.post("/resume")
 def upload_resume(
+    request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
@@ -92,9 +99,11 @@ def upload_resume(
     session.add(student)
     session.commit()
     session.refresh(student)
-
+    
+    full_url = str(request.base_url) + student.resume_url
     return {
         "message": "Resume uploaded and processed successfully", 
         "filename": filename,
+        "resume_url": full_url,
         "text_preview": extracted_text[:100] + "..." # Show first 100 chars to prove it worked
     }
