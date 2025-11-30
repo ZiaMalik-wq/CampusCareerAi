@@ -5,32 +5,44 @@ import { Link } from 'react-router-dom';
 const JobCard = ({ job }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition duration-300 flex flex-col h-full">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{job.title}</h3>
-          <p className="text-blue-600 font-medium flex items-center gap-1 mt-1">
-            <Building className="w-4 h-4" />
-            {job.company_name || 'Hidden Company'}
+      
+      {/* HEADER SECTION */}
+      <div className="flex justify-between items-start gap-3 mb-4">
+        
+        {/* Title & Company */}
+        <div className="flex-1 min-w-0"> 
+          <h3 
+            className="text-lg sm:text-xl font-bold text-gray-800 line-clamp-2 leading-tight" 
+            title={job.title} /* Shows full text on hover */
+          >
+            {job.title}
+          </h3>
+          <p className="text-blue-600 font-medium flex items-center gap-1 mt-1 truncate">
+            <Building className="w-4 h-4 shrink-0" />
+            <span className="truncate">{job.company_name || 'Hidden Company'}</span>
           </p>
         </div>
-        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+
+        {/* Badge - Added shrink-0 so it never squishes */}
+        <span className={`shrink-0 text-xs px-3 py-1 rounded-full font-semibold whitespace-nowrap ${
           job.job_type === 'Internship' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
         }`}>
           {job.job_type}
         </span>
       </div>
 
+      {/* BODY SECTION */}
       <div className="space-y-2 mb-6 flex-grow">
         <p className="text-gray-500 text-sm flex items-center gap-2">
-          <MapPin className="w-4 h-4" />
-          {job.location || job.company_location}
+          <MapPin className="w-4 h-4 shrink-0" />
+          <span className="truncate">{job.location || job.company_location}</span>
         </p>
         <p className="text-gray-500 text-sm flex items-center gap-2">
-          <DollarSign className="w-4 h-4" />
+          <DollarSign className="w-4 h-4 shrink-0" />
           {job.salary_range || 'Not disclosed'}
         </p>
         <p className="text-gray-500 text-sm flex items-center gap-2">
-          <Clock className="w-4 h-4" />
+          <Clock className="w-4 h-4 shrink-0" />
           Posted {new Date(job.created_at).toLocaleDateString()}
         </p>
         
@@ -39,6 +51,7 @@ const JobCard = ({ job }) => {
         </p>
       </div>
 
+      {/* FOOTER BUTTON */}
       <Link 
         to={`/jobs/${job.id}`} 
         className="mt-auto w-full block text-center bg-gray-50 hover:bg-gray-100 text-blue-600 font-semibold py-2 rounded-lg border border-gray-200 transition"

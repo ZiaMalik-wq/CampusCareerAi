@@ -4,7 +4,8 @@ import { Briefcase, User, LogOut, PlusCircle, Menu, X, Home, Search, LayoutDashb
 import { AuthContext } from "../context/AuthContext";
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext);
+  // 1. EXTRACT LOADING FROM CONTEXT
+  const { user, logout, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,23 +16,19 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  // Helper to get the display name safely
   const getDisplayName = () => {
     if (!user) return "";
     return user.full_name || user.name || user.email || "User";
   };
 
-  // Helper to check role safely (case insensitive)
   const isCompany = () => {
     return user?.role === "company" || user?.role === "COMPANY";
   };
 
-  // Helper to check if link is active
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  // Close mobile menu when clicking a link
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
   };
@@ -79,11 +76,14 @@ const Navbar = () => {
               Jobs
             </Link>
 
-            {/* AUTHENTICATED USER */}
-            {user ? (
+            {/* 2. AUTH STATUS CHECK LOGIC */}
+            {loading ? (
+              // OPTION A: Show nothing while loading (prevents flash)
+              <div className="w-24"></div> 
+            ) : user ? (
+              // IF LOADED AND USER EXISTS
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                 
-                {/* COMPANY-SPECIFIC LINKS */}
                 {isCompany() && (
                   <>
                     <Link
@@ -129,7 +129,6 @@ const Navbar = () => {
                     </div>
                   </Link>
 
-                  {/* Logout Button */}
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-400 transition"
@@ -140,6 +139,7 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
+              // IF LOADED AND NO USER (GUEST)
               <div className="flex gap-3">
                 <Link
                   to="/login"
@@ -176,7 +176,6 @@ const Navbar = () => {
           <div className="md:hidden mt-4 pb-4 border-t border-gray-100 pt-4 animate-in slide-in-from-top">
             <div className="flex flex-col space-y-2">
               
-              {/* Navigation Links */}
               <Link
                 to="/"
                 onClick={handleLinkClick}
@@ -203,9 +202,11 @@ const Navbar = () => {
                 Browse Jobs
               </Link>
 
-              {user ? (
+              {/* 3. MOBILE AUTH CHECK LOGIC */}
+              {loading ? (
+                 <div className="px-4 py-3 text-gray-400 text-sm">Checking authentication...</div>
+              ) : user ? (
                 <>
-                  {/* User Info Card */}
                   <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
@@ -224,7 +225,6 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  {/* Company Links */}
                   {isCompany() && (
                     <>
                       <Link
@@ -251,7 +251,6 @@ const Navbar = () => {
                     </>
                   )}
 
-                  {/* Profile Link */}
                   <Link
                     to="/profile"
                     onClick={handleLinkClick}
@@ -261,7 +260,6 @@ const Navbar = () => {
                     My Profile
                   </Link>
 
-                  {/* Logout Button */}
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-3 px-4 py-3 text-red-600 border-2 border-red-200 rounded-lg hover:bg-red-50 font-medium transition"

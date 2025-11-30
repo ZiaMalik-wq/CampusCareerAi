@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import toast, { Toaster } from "react-hot-toast";
-import { User, Building2, Mail, Lock, Sparkles, ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { User, Building2, Mail, Lock, Sparkles, ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -53,29 +53,34 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register", formData);
       console.log("Registration success:", response.data);
-      
+
       toast.success("Account created successfully!", {
-        icon: "🎉",
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
         duration: 2000,
+        style: { fontWeight: '500' }
       });
 
       setTimeout(() => {
         navigate("/login");
       }, 1500);
+      
     } catch (error) {
       console.error("Registration Error:", error);
       const errorMsg =
         error.response?.data?.detail || "Registration failed. Try again.";
-      toast.error(errorMsg);
-    } finally {
+      
+      toast.error(errorMsg, {
+        icon: <AlertCircle className="w-5 h-5 text-red-600" />,
+      });
+      
+      // Only stop loading if there was an error
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center py-12 px-4">
-      <Toaster position="top-center" />
-
+      
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 -left-40 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>

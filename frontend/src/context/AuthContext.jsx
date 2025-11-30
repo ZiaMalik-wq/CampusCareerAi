@@ -5,6 +5,7 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  // Start loading as true to prevent flash of content
   const [loading, setLoading] = useState(true);
 
   // Helper function to fetch user details from Backend
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      // Success: Set the full user object (id, email, role, etc.)
+      // Success: Set the full user object
       setUser(response.data);
     } catch (error) {
       console.error("Token invalid or expired", error);
@@ -24,58 +25,51 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("token");
       setUser(null);
     } finally {
+      // STOP LOADING irrespective of success or failure
       setLoading(false);
     }
   };
 
-  // 1. Check if user is already logged in when app loads (The "Persist" logic)
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       fetchCurrentUser(token);
     } else {
+      // If no token exists, we aren't loading anymore
       setLoading(false);
     }
   }, []);
 
-  // 2. Login Function
   const login = async (email, password) => {
     try {
-      // A. Create Form Data (Standard FastAPI requirement for OAuth2PasswordRequestForm)
       const formData = new URLSearchParams();
-      formData.append("username", email); // Backend expects 'username' key
+      formData.append("username", email);
       formData.append("password", password);
 
-      // B. Send Request to get Token
       const response = await api.post("/auth/token", formData, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
       });
 
-      // C. Save Token
       const { access_token } = response.data;
       localStorage.setItem("token", access_token);
 
-      // D. IMPORTANT: Fetch the user details immediately after getting the token
-      // This ensures the UI updates (e.g., shows "Welcome, Student") without a refresh
       await fetchCurrentUser(access_token);
-
       return true;
     } catch (error) {
       console.error("Login failed", error);
-      throw error; // Throw error so the UI can show an alert
+      throw error;
     }
   };
 
-  // 3. Logout Function
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    // Optional: window.location.href = '/login';
   };
 
   return (
+    // Pass 'loading' to the rest of the app
     <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
