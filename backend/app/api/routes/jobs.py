@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.auth import User, UserRole
-from app.models.job import Job
+from app.models.job import Job, JobView
 from app.schemas import JobCreate, JobPublic, JobUpdate, JobRecommendation
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_optional_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
 import logging
@@ -540,3 +542,57 @@ def reindex_all_jobs(
         count += 1
         
     return {"message": f"Successfully re-indexed {count} jobs to Qdrant."}
+
+@router.post("/{job_id}/view")
+def increment_job_view(
+    job_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Track job views. Prevents duplicates from same IP/User within 24 hours.
+    """
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # 1. Don't count if Company is viewing their own job
+    if current_user and current_user.role == UserRole.COMPANY and current_user.company_profile:
+        if job.company_id == current_user.company_profile.id:
+            return {"message": "Owner view ignored", "views": job.views_count}
+    
+    # 2. Check for duplicate view (Last 24 hours)
+    ip = request.client.host
+    yesterday = datetime.utcnow() - timedelta(days=1)
+    
+    # Logic: Look for a view on this job, after yesterday, matching EITHER user_id OR ip_address
+    query = select(JobView).where(
+        JobView.job_id == job_id,
+        JobView.viewed_at > yesterday
+    )
+    
+    if current_user:
+        query = query.where(or_(JobView.user_id == current_user.id, JobView.ip_address == ip))
+    else:
+        query = query.where(JobView.ip_address == ip)
+
+    existing_view = session.exec(query).first()
+    
+    if not existing_view:
+        # 3. Create Record
+        new_view = JobView(
+            job_id=job_id,
+            ip_address=ip,
+            user_id=current_user.id if current_user else None
+        )
+        session.add(new_view)
+        
+        # 4. Increment Counter
+        job.views_count += 1
+        session.add(job)
+        
+        session.commit()
+        return {"message": "View tracked", "views": job.views_count}
+    
+    return {"message": "Duplicate view ignored", "views": job.views_count}

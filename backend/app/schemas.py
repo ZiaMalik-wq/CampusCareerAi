@@ -40,6 +40,7 @@ class JobPublic(JobCreate):
     match_score: Optional[float] = None
     created_at: datetime
     is_active: bool
+    views_count: int = 0
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
