@@ -42,7 +42,6 @@ class Student(SQLModel, table=True):
     # Relationship
     user: Optional[User] = Relationship(back_populates="student_profile")
 
-
 class Company(SQLModel, table=True):
     __tablename__ = "companies"
     
@@ -50,8 +49,8 @@ class Company(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id")
     company_name: str
     location: Optional[str] = None
+    website: Optional[str] = None
     
     # Existing relationship
     user: Optional[User] = Relationship(back_populates="company_profile")
-
     jobs: List["Job"] = Relationship(back_populates="company")

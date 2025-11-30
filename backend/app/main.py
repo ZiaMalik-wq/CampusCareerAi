@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import check_db_connection
 from app.core.vector_db import vector_db 
-from app.api.routes import auth, jobs, chat, students
+from app.api.routes import auth, jobs, chat, students, companies
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     logger.info("App starting...")
     check_db_connection()
     yield
-    logger.info("🛑 App shutdown")
+    logger.info("App shutdown")
 
 # 3. Initialize App
 app = FastAPI(
@@ -52,6 +52,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 app.include_router(students.router, prefix="/students", tags=["Students"])
 app.include_router(chat.router, prefix="/chat", tags=["AI Chat"])
+app.include_router(companies.router, prefix="/companies", tags=["Companies"])
 
 # 7. Root Endpoints
 # Allow HEAD for Render Health Checks

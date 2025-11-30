@@ -79,3 +79,15 @@ class ChatResponse(BaseModel):
     answer: str
     extracted_filters: dict
     results: List[JobPublic]
+    
+class CompanyUpdate(BaseModel):
+    company_name: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    # We can add 'description' later if we update the DB model
+
+# Output Schema
+class CompanyPublic(BaseModel):
+    company_name: str
+    location: Optional[str] = None
+    website: Optional[str] = None
