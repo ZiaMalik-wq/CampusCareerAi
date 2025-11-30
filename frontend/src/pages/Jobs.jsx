@@ -23,7 +23,6 @@ const Jobs = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-
   const fetchJobs = async (queryOverride = null, modeOverride = null) => {
     setLoading(true);
     setError(null);
@@ -73,12 +72,14 @@ const Jobs = () => {
   };
 
   const handleClearSearch = () => {
-    setSearchQuery("");
+    setSearchQuery(""); // Update UI state
     fetchJobs("");
   };
 
+  // UX Improvement 3: Immediate Search on Mode Change
   const handleModeChange = (newMode) => {
-    setSearchMode(newMode);
+    setSearchMode(newMode); // Update UI state
+    // If there is text, trigger search immediately with new mode
     if (searchQuery.trim()) {
       fetchJobs(null, newMode);
     }
@@ -289,6 +290,7 @@ const Jobs = () => {
                   <button
                     key={suggestion}
                     type="button"
+                    // UX Fix: Update UI state AND fetch immediately
                     onClick={() => {
                       setSearchQuery(suggestion);
                       fetchJobs(suggestion);

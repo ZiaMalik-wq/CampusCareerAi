@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Users,
   Edit,
+  Eye, // Added Eye icon import
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,8 +27,26 @@ const JobDetails = () => {
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
+        // 1. Fetch the Job Data first
         const response = await api.get(`/jobs/${id}`);
-        setJob(response.data);
+        let jobData = response.data;
+
+        // 2. Track the View (Silently)
+        try {
+          // This calls your new endpoint: @router.post("/{job_id}/view")
+          const viewResponse = await api.post(`/jobs/${id}/view`);
+          if (viewResponse.data.views !== undefined) {
+            jobData = { ...jobData, views_count: viewResponse.data.views };
+          }
+        } catch (viewError) {
+          console.log(
+            "View tracking skipped:",
+            viewError.response?.data?.message || viewError.message
+          );
+        }
+
+        // 3. Set state with the final data
+        setJob(jobData);
       } catch (err) {
         console.error("Error fetching job details:", err);
         setError("Job not found or has been removed.");
@@ -48,8 +67,6 @@ const JobDetails = () => {
     toast.success("Application feature coming in Week 4!");
   };
 
-  // Helper to check if the logged-in user owns this job
-  // Note: This requires your AuthContext to store the company_id, or we simply check if role is 'company'
   const isCompany = user?.role === "company" || user?.role === "COMPANY";
 
   if (loading)
@@ -105,6 +122,15 @@ const JobDetails = () => {
                     <Clock className="w-4 h-4" />
                     Posted {new Date(job.created_at).toLocaleDateString()}
                   </span>
+
+                  {/* ADDED: View Count Display */}
+                  <span
+                    className="flex items-center gap-1 text-gray-500"
+                    title="Total Views"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {job.views_count || 0} views
+                  </span>
                 </div>
               </div>
 
@@ -113,7 +139,7 @@ const JobDetails = () => {
                 {isCompany ? (
                   <>
                     <button
-                      onClick={() => navigate(`/jobs/${id}/edit`)} // UPDATED: Navigates to Edit Page
+                      onClick={() => navigate(`/jobs/${id}/edit`)}
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition shadow-sm"
                     >
                       <Edit className="w-4 h-4" />

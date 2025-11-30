@@ -532,30 +532,6 @@ const Profile = () => {
                   )}
                 </button>
               </div>
-
-              {/* Quick Stats */}
-              <div className="pt-6 mt-6 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-purple-600" />
-                  Quick Stats
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-600 mb-1">
-                      {/* You can add actual counts here */}
-                      --
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium">Active Job Posts</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                    <div className="text-2xl font-bold text-green-600 mb-1">
-                      {/* You can add actual counts here */}
-                      --
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium">Total Applications</div>
-                  </div>
-                </div>
-              </div>
             </form>
           </div>
         )}
