@@ -11,8 +11,9 @@ class Job(SQLModel, table=True):
     description: str
     location: str
     job_type: str
-    salary_range: Optional[str] = None
     max_seats: int = 1
+    salary_range: Optional[str] = None
+    deadline: Optional[datetime] = None 
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     views_count: int = Field(default=0)

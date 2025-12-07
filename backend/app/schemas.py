@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr
 from app.models.auth import UserRole
 from typing import Optional
 from app.models.job import Job
+from app.models.application import ApplicationStatus
 from typing import List, Optional
 
 # 1. Schema for User Registration (What the Frontend sends)
@@ -31,6 +32,7 @@ class JobCreate(BaseModel):
     job_type: str  # Internship, Full-time, etc.
     salary_range: Optional[str] = None
     max_seats: int = 1
+    deadline: Optional[datetime] = None
 
 class JobPublic(JobCreate):
     id: int
@@ -41,6 +43,7 @@ class JobPublic(JobCreate):
     created_at: datetime
     is_active: bool
     views_count: int = 0
+    deadline: Optional[datetime] = None
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -92,3 +95,20 @@ class CompanyPublic(BaseModel):
     company_name: str
     location: Optional[str] = None
     website: Optional[str] = None
+
+
+class ApplicationBase(BaseModel):
+    job_id: int
+
+class ApplicationCreate(ApplicationBase):
+    pass
+
+class ApplicationPublic(ApplicationBase):
+    id: int
+    student_id: int
+    status: ApplicationStatus
+    applied_at: datetime
+    
+    # Optional: Include Job details for "My Applications" page
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
