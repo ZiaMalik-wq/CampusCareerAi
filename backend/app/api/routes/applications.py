@@ -7,6 +7,7 @@ from app.models.job import Job
 from app.models.application import Application, ApplicationStatus
 from app.schemas import ApplicationPublic
 from app.api.deps import get_current_user
+from app.models.auth import Company
 
 router = APIRouter()
 
@@ -72,3 +73,45 @@ def apply_to_job(
         job_title=job.title,
         company_name=job.company.company_name if job.company else "Unknown"
     )
+
+
+@router.get("/me", response_model=list[ApplicationPublic])
+def get_my_applications(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all applications for the logged-in student.
+    Includes Job Title and Company Name for display.
+    """
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students have applications")
+    
+    if not current_user.student_profile:
+        return []
+
+    # Fetch applications linked to this student
+    # We join Job and Company to get the names in one query
+    statement = (
+        select(Application, Job, Company)
+        .join(Job, Application.job_id == Job.id)
+        .join(Company, Job.company_id == Company.id)
+        .where(Application.student_id == current_user.student_profile.id)
+        .order_by(Application.applied_at.desc())
+    )
+    
+    results = session.exec(statement).all()
+    
+    # Format output
+    applications_list = []
+    for application, job, company in results:
+        app_data = application.model_dump()
+        
+        # Manually attach details from the joined tables
+        app_data["job_title"] = job.title
+        app_data["job_location"] = job.location
+        app_data["company_name"] = company.company_name
+        
+        applications_list.append(ApplicationPublic(**app_data))
+        
+    return applications_list
