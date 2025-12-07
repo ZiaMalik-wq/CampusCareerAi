@@ -109,6 +109,7 @@ class ApplicationPublic(ApplicationBase):
     status: ApplicationStatus
     applied_at: datetime
     
-    # Optional: Include Job details for "My Applications" page
+    # Extra fields for UI display
     job_title: Optional[str] = None
     company_name: Optional[str] = None
+    job_location: Optional[str] = None
