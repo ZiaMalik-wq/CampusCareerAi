@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import check_db_connection
 from app.core.vector_db import vector_db 
-from app.api.routes import auth, jobs, chat, students, companies
+from app.api.routes import auth, jobs, chat, students, companies, applications
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 5. Middleware (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (Good for Dev/Hackathons)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +53,8 @@ app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 app.include_router(students.router, prefix="/students", tags=["Students"])
 app.include_router(chat.router, prefix="/chat", tags=["AI Chat"])
 app.include_router(companies.router, prefix="/companies", tags=["Companies"])
+app.include_router(applications.router, prefix="/applications", tags=["Applications"])
+
 
 # 7. Root Endpoints
 # Allow HEAD for Render Health Checks
