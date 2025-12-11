@@ -20,7 +20,6 @@ import {
   Filter,
   ArrowUpRight,
 } from "lucide-react";
-
 const MyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +28,7 @@ const MyJobs = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     // Security Check
@@ -124,36 +124,44 @@ const MyJobs = () => {
 
   const handleDelete = async (jobId) => {
     if (
-      window.confirm(
+      !window.confirm(
         "Are you sure you want to delete this job posting? This action cannot be undone."
       )
-    ) {
-      // Show loading toast
-      const loadingToast = toast.loading("Deleting job...");
+    )
+      return;
 
-      try {
-        await api.delete(`/jobs/${jobId}`);
+    // Set per-item deleting flag
+    setDeletingId(jobId);
 
-        // Update UI immediately by removing from state
-        setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+    // Show loading toast and keep its id
+    const loadingToastId = toast.loading("Deleting job...");
 
-        // Show success toast
-        toast.success("Job deleted successfully!", {
-          id: loadingToast,
-          duration: 3000,
-        });
-      } catch (err) {
-        console.error("Error deleting job:", err);
+    try {
+      // await backend delete
+      await api.delete(`/jobs/${jobId}`);
 
-        // Show error toast
-        const errorMsg =
-          err.response?.data?.detail ||
-          "Failed to delete job. Please try again.";
-        toast.error(errorMsg, {
-          id: loadingToast,
-          duration: 4000,
-        });
-      }
+      // Remove from local state
+      setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+
+      // Dismiss loading toast explicitly (safer) then show success
+      toast.dismiss(loadingToastId);
+      toast.success("Job deleted successfully!", { duration: 3000 });
+
+      // Optional: if you want to redirect after deleting last job:
+      // if (jobs.length <= 1) navigate('/somewhere');
+    } catch (err) {
+      console.error("Error deleting job:", err);
+
+      // Dismiss loading toast and show error
+      toast.dismiss(loadingToastId);
+
+      const errorMsg =
+        err?.response?.data?.detail ||
+        "Failed to delete job. Please try again.";
+      toast.error(errorMsg, { duration: 4000 });
+    } finally {
+      // clear per-item deleting flag
+      setDeletingId(null);
     }
   };
 
@@ -418,12 +426,8 @@ const MyJobs = () => {
                         </button>
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();
-                            // For now, we'll use the job details view as edit
-                            // You can create a separate edit page later
-                            alert(
-                              `Edit functionality coming soon!\n\nFor now, you can:\n1. View the job details\n2. Create a new job with updated info\n3. Delete the old one\n\nJob ID: ${job.id}`
-                            );
+                            e.stopPropagation(); // Prevents clicking the parent card
+                            navigate(`/jobs/${job.id}/edit`); // Navigate to the Edit Page
                           }}
                           className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
                         >
@@ -454,10 +458,46 @@ const MyJobs = () => {
                         </button>
                         <button
                           onClick={() => handleDelete(job.id)}
-                          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
+                          disabled={deletingId === job.id}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition text-sm font-semibold
+                            ${
+                              deletingId === job.id
+                                ? "bg-red-500 cursor-not-allowed opacity-80"
+                                : "bg-red-600 hover:bg-red-700"
+                            }
+                          `}
                         >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
+                          {deletingId === job.id ? (
+                            <>
+                              <svg
+                                className="w-4 h-4 animate-spin"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeOpacity="0.25"
+                                />
+                                <path
+                                  d="M22 12a10 10 0 0 1-10 10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>

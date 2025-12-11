@@ -13,6 +13,7 @@ import {
   Edit,
   Eye,
   Sparkles,
+  Calendar, // Imported Calendar Icon
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -65,7 +66,7 @@ const JobDetails = () => {
   const isStudent = user?.role === "student" || user?.role === "STUDENT";
   const isCompany = user?.role === "company" || user?.role === "COMPANY";
   const isOwner = isCompany && user?.company_profile?.id === job?.company_id;
-  
+
   if (loading)
     return (
       <div className="flex flex-col justify-center items-center h-[80vh]">
@@ -161,7 +162,6 @@ const JobDetails = () => {
 
               {/* DYNAMIC ACTION BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-3 lg:mt-0 mt-4">
-                {/* CASE 1: Owner Company - Show Edit & Applicants */}
                 {isOwner && (
                   <>
                     <button
@@ -183,7 +183,6 @@ const JobDetails = () => {
                   </>
                 )}
 
-                {/* CASE 2: Student or Guest - Show Apply Button */}
                 {(isStudent || !user) && (
                   <button
                     onClick={handleApply}
@@ -194,7 +193,6 @@ const JobDetails = () => {
                   </button>
                 )}
 
-                {/* CASE 3: Other Company - Show Nothing (View Only) */}
                 {isCompany && !isOwner && (
                   <div className="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-xl border border-gray-200 text-center">
                     View Only
@@ -218,7 +216,6 @@ const JobDetails = () => {
                 </div>
               </section>
 
-              {/* Company Info Section */}
               {job.company_location && (
                 <section className="pt-6 border-t border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -273,6 +270,27 @@ const JobDetails = () => {
                     </p>
                   </div>
 
+                  {/* NEW: Deadline Section */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-2">
+                      <Calendar className="w-3 h-3" />
+                      Application Deadline
+                    </label>
+                    <p
+                      className={`font-semibold ${
+                        job.deadline ? "text-orange-600" : "text-green-600"
+                      }`}
+                    >
+                      {job.deadline
+                        ? new Date(job.deadline).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "Open until filled"}
+                    </p>
+                  </div>
+
                   <div className="pt-4 border-t border-gray-200">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-2">
                       <Eye className="w-3 h-3" />
@@ -285,7 +303,6 @@ const JobDetails = () => {
                   </div>
                 </div>
 
-                {/* Apply CTA for mobile */}
                 {(isStudent || !user) && (
                   <button
                     onClick={handleApply}
