@@ -53,6 +53,7 @@ class JobUpdate(BaseModel):
     salary_range: Optional[str] = None
     max_seats: Optional[int] = None
     is_active: Optional[bool] = None
+    deadline: Optional[datetime] = None
     
 class StudentUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -113,3 +114,17 @@ class ApplicationPublic(ApplicationBase):
     job_title: Optional[str] = None
     company_name: Optional[str] = None
     job_location: Optional[str] = None
+    
+
+# Output Schema for Company viewing an Applicant
+class ApplicantPublic(BaseModel):
+    application_id: int
+    student_id: int
+    full_name: str
+    email: str
+    university: Optional[str] = None
+    cgpa: Optional[float] = None
+    skills: Optional[str] = None
+    resume_url: Optional[str] = None # The Signed URL
+    status: ApplicationStatus
+    applied_at: datetime
