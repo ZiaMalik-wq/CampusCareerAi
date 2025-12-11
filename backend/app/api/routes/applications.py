@@ -5,9 +5,10 @@ from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.models.job import Job
 from app.models.application import Application, ApplicationStatus
-from app.schemas import ApplicationPublic
+from app.schemas import ApplicationPublic, ApplicantPublic
 from app.api.deps import get_current_user
-from app.models.auth import Company
+from app.models.auth import Company, Student
+from app.core.supabase import supabase
 
 router = APIRouter()
 
@@ -115,3 +116,68 @@ def get_my_applications(
         applications_list.append(ApplicationPublic(**app_data))
         
     return applications_list
+
+
+@router.get("/job/{job_id}", response_model=list[ApplicantPublic])
+def get_job_applicants(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Company: View all students who applied to a specific job.
+    Includes logic to generate secure Resume Links.
+    """
+    # 1. Security: Only Companies allowed
+    if current_user.role != UserRole.COMPANY or not current_user.company_profile:
+        raise HTTPException(status_code=403, detail="Only companies can view applicants")
+
+    # 2. Security: Verify Job Ownership
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job.company_id != current_user.company_profile.id:
+        raise HTTPException(status_code=403, detail="You do not own this job posting")
+
+    # 3. Fetch Applications + Student Info + User Email
+    statement = (
+        select(Application, Student, User)
+        .join(Student, Application.student_id == Student.id)
+        .join(User, Student.user_id == User.id)
+        .where(Application.job_id == job_id)
+        .order_by(Application.applied_at.desc())
+    )
+    
+    results = session.exec(statement).all()
+    
+    # 4. Format Data & Sign Resume URLs
+    applicants_list = []
+    for application, student, user in results:
+        
+        # Generate Signed URL for Resume (Valid for 1 hour)
+        secure_resume_link = None
+        if student.resume_url:
+            try:
+                # Assuming student.resume_url stores the path "5/cv.pdf"
+                path = student.resume_url
+                res = supabase.storage.from_("resumes").create_signed_url(path, 3600)
+                secure_resume_link = res.get("signedURL") if isinstance(res, dict) else res
+            except Exception:
+                secure_resume_link = None
+
+        applicant_data = ApplicantPublic(
+            application_id=application.id,
+            student_id=student.id,
+            full_name=student.full_name,
+            email=user.email,
+            university=student.university,
+            cgpa=student.cgpa,
+            skills=student.skills,
+            resume_url=secure_resume_link,
+            status=application.status,
+            applied_at=application.applied_at
+        )
+        applicants_list.append(applicant_data)
+        
+    return applicants_list

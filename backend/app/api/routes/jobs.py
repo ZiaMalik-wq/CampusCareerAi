@@ -287,11 +287,13 @@ def get_job_recommendations(
     jobs = session.exec(statement).all()
 
     final_recommendations = []
+    now = datetime.utcnow()
 
     for job in jobs:
         if not job.is_active:
             continue
-        
+        if job.deadline and job.deadline < now:
+            continue
         # A. Semantic Score (0.0 to 1.0)
         semantic_score = scores_map.get(job.id, 0)
 
@@ -390,7 +392,9 @@ def read_jobs(
     """
     # 1. Base Query: Active jobs only
     statement = select(Job).where(Job.is_active == True)
-    
+   
+    now = datetime.utcnow()
+    statement = statement.where(or_(Job.deadline == None, Job.deadline > now))
     # 2. Filter out company's own jobs if user is a company
     if current_user and current_user.role == UserRole.COMPANY:
         if current_user.company_profile:
