@@ -229,7 +229,7 @@ def update_application_status(
         session.add(job)
 
     # 6. Update Status
-    application.status = status_update.status
+    application.status = status_update.status.lower() 
     session.add(application)
     session.commit()
     session.refresh(application)
