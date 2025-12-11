@@ -44,6 +44,7 @@ class JobPublic(JobCreate):
     is_active: bool
     views_count: int = 0
     deadline: Optional[datetime] = None
+    applications_count: int = 0
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -128,3 +129,7 @@ class ApplicantPublic(BaseModel):
     resume_url: Optional[str] = None # The Signed URL
     status: ApplicationStatus
     applied_at: datetime
+    
+# Input Schema for updating status
+class ApplicationUpdate(BaseModel):
+    status: ApplicationStatus

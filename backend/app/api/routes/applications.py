@@ -181,3 +181,67 @@ def get_job_applicants(
         applicants_list.append(applicant_data)
         
     return applicants_list
+
+
+from app.schemas import ApplicationUpdate # Add this import
+
+@router.patch("/{application_id}/status", response_model=ApplicationPublic)
+def update_application_status(
+    application_id: int,
+    status_update: ApplicationUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Company updates application status (Shortlisted, Rejected, Hired).
+    If HIRED -> Decrement job max_seats.
+    """
+    # 1. Fetch Application
+    application = session.get(Application, application_id)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    # 2. Fetch Job to verify ownership
+    job = session.get(Job, application.job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # 3. Security: Only the Job Owner can update
+    if current_user.role != UserRole.COMPANY or not current_user.company_profile:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if job.company_id != current_user.company_profile.id:
+        raise HTTPException(status_code=403, detail="You do not own this job")
+
+    # 4. Handle HIRED Logic (Seat Decrement)
+    # If moving TO Hired status FROM something else
+    if status_update.status == ApplicationStatus.HIRED and application.status != ApplicationStatus.HIRED:
+        if job.max_seats > 0:
+            job.max_seats -= 1
+            session.add(job)
+        else:
+            raise HTTPException(status_code=400, detail="No seats remaining for this job")
+
+    # 5. Handle UN-HIRED Logic (Seat Increment) - Optional safety
+    # If they were hired by mistake and we change it back to Applied/Rejected
+    if application.status == ApplicationStatus.HIRED and status_update.status != ApplicationStatus.HIRED:
+        job.max_seats += 1
+        session.add(job)
+
+    # 6. Update Status
+    application.status = status_update.status
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+
+    # 7. Return with Job/Company details for Schema compliance
+    # (Since ApplicationPublic requires these fields)
+    return ApplicationPublic(
+        id=application.id,
+        job_id=application.job_id,
+        student_id=application.student_id,
+        status=application.status,
+        applied_at=application.applied_at,
+        job_title=job.title,
+        company_name=current_user.company_profile.company_name
+    )

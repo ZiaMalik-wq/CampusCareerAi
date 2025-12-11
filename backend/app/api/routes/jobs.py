@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.models.job import Job, JobView
@@ -12,6 +12,7 @@ from app.core.vector_db import vector_db
 import logging
 from sqlmodel import select, col, or_
 from app.core.embedding_utils import build_student_embedding_text, build_job_embedding_text
+from app.models.application import Application
 
 
 logger = logging.getLogger(__name__)
@@ -356,23 +357,24 @@ def read_my_jobs(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get jobs posted by the CURRENT logged-in company.
-    """
     if current_user.role != UserRole.COMPANY or not current_user.company_profile:
         raise HTTPException(status_code=403, detail="Not a company")
         
-    # Filter by company_id
+    # Fetch jobs
     statement = select(Job).where(Job.company_id == current_user.company_profile.id)
     jobs = session.exec(statement).all()
     
-    # Format response
     public_jobs = []
     for job in jobs:
         job_data = job.model_dump()
-        # We know the company name since it's the current user
         job_data["company_name"] = current_user.company_profile.company_name
         job_data["company_location"] = current_user.company_profile.location 
+        
+        app_count = session.exec(
+            select(func.count(Application.id)).where(Application.job_id == job.id)
+        ).one()
+        
+        job_data["applications_count"] = app_count
         public_jobs.append(JobPublic(**job_data))
         
     return public_jobs
