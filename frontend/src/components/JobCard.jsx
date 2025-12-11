@@ -1,16 +1,25 @@
 import React from "react";
-import { MapPin, Building, Clock, DollarSign, Calendar } from "lucide-react"; // Added Calendar Icon
+import {
+  MapPin,
+  Building,
+  Clock,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  Clock as ClockIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
-const JobCard = ({ job }) => {
-  // Helper to format deadline text
+// Added 'isActive' prop to handle status badge inside the card
+const JobCard = ({ job, children, isActive }) => {
   const getDeadlineText = () => {
     if (!job.deadline) return "Open until filled";
     return `Deadline: ${new Date(job.deadline).toLocaleDateString()}`;
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition duration-300 flex flex-col h-full">
+    // Added 'h-full' to ensure cards stretch to same height in grid
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition duration-300 flex flex-col h-full relative">
       {/* HEADER SECTION */}
       <div className="flex justify-between items-start gap-3 mb-4">
         {/* Title & Company */}
@@ -29,16 +38,40 @@ const JobCard = ({ job }) => {
           </p>
         </div>
 
-        {/* Badge */}
-        <span
-          className={`shrink-0 text-xs px-3 py-1 rounded-full font-semibold whitespace-nowrap ${
-            job.job_type === "Internship"
-              ? "bg-purple-100 text-purple-700"
-              : "bg-green-100 text-green-700"
-          }`}
-        >
-          {job.job_type}
-        </span>
+        {/* Badges Column (Prevents Overlap) */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* Job Type Badge */}
+          <span
+            className={`text-xs px-3 py-1 rounded-full font-semibold whitespace-nowrap ${
+              job.job_type === "Internship"
+                ? "bg-purple-100 text-purple-700"
+                : "bg-green-100 text-green-700"
+            }`}
+          >
+            {job.job_type}
+          </span>
+
+          {/* Status Badge (Only shows if isActive prop is passed) */}
+          {isActive !== undefined && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border ${
+                isActive
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : "bg-gray-50 text-gray-600 border-gray-200"
+              }`}
+            >
+              {isActive ? (
+                <>
+                  <CheckCircle className="w-3 h-3" /> Active
+                </>
+              ) : (
+                <>
+                  <ClockIcon className="w-3 h-3" /> Paused
+                </>
+              )}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* BODY SECTION */}
@@ -60,7 +93,6 @@ const JobCard = ({ job }) => {
           Posted {new Date(job.created_at).toLocaleDateString()}
         </p>
 
-        {/*Deadline Display */}
         <p
           className={`text-sm flex items-center gap-2 ${
             job.deadline ? "text-orange-600 font-medium" : "text-gray-400"
@@ -75,13 +107,19 @@ const JobCard = ({ job }) => {
         </p>
       </div>
 
-      {/* FOOTER BUTTON */}
-      <Link
-        to={`/jobs/${job.id}`}
-        className="mt-auto w-full block text-center bg-gray-50 hover:bg-gray-100 text-blue-600 font-semibold py-2 rounded-lg border border-gray-200 transition"
-      >
-        View Details
-      </Link>
+      {/* FOOTER SECTION */}
+      <div className="mt-auto pt-4 border-t border-gray-100">
+        {children ? (
+          children
+        ) : (
+          <Link
+            to={`/jobs/${job.id}`}
+            className="w-full block text-center bg-gray-50 hover:bg-gray-100 text-blue-600 font-semibold py-2 rounded-lg border border-gray-200 transition"
+          >
+            View Details
+          </Link>
+        )}
+      </div>
     </div>
   );
 };

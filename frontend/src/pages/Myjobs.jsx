@@ -12,20 +12,18 @@ import {
   Eye,
   Edit3,
   Trash2,
-  MoreVertical,
   CheckCircle,
   XCircle,
   Clock,
   Search,
-  Filter,
   ArrowUpRight,
 } from "lucide-react";
+
 const MyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = useState(null);
@@ -52,27 +50,23 @@ const MyJobs = () => {
   }, [user, navigate]);
 
   const handleToggleStatus = async (jobId, currentStatus) => {
-    // Show loading toast
     const loadingToast = toast.loading(
       currentStatus ? "Pausing job..." : "Activating job..."
     );
 
     try {
-      // Using PUT endpoint to update job status
       const jobToUpdate = jobs.find((j) => j.id === jobId);
       await api.put(`/jobs/${jobId}`, {
         ...jobToUpdate,
         is_active: !currentStatus,
       });
 
-      // Update local state immediately
       setJobs((prevJobs) =>
         prevJobs.map((job) =>
           job.id === jobId ? { ...job, is_active: !currentStatus } : job
         )
       );
 
-      // Show success toast
       toast.success(
         `Job ${!currentStatus ? "activated" : "paused"} successfully!`,
         {
@@ -82,8 +76,6 @@ const MyJobs = () => {
       );
     } catch (err) {
       console.error("Error toggling status:", err);
-
-      // Show error toast
       const errorMsg =
         err.response?.data?.detail ||
         "Failed to update job status. Please try again.";
@@ -117,9 +109,9 @@ const MyJobs = () => {
     return matchesStatus && matchesSearch;
   });
 
-  // Action handlers using your actual API endpoints
-  const handleViewDetails = (jobId) => {
-    navigate(`/jobs/${jobId}`);
+  // Action handlers
+  const handleViewApplicants = (jobId) => {
+    navigate(`/jobs/${jobId}/applicants`);
   };
 
   const handleDelete = async (jobId) => {
@@ -130,37 +122,22 @@ const MyJobs = () => {
     )
       return;
 
-    // Set per-item deleting flag
     setDeletingId(jobId);
-
-    // Show loading toast and keep its id
     const loadingToastId = toast.loading("Deleting job...");
 
     try {
-      // await backend delete
       await api.delete(`/jobs/${jobId}`);
-
-      // Remove from local state
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-
-      // Dismiss loading toast explicitly (safer) then show success
       toast.dismiss(loadingToastId);
       toast.success("Job deleted successfully!", { duration: 3000 });
-
-      // Optional: if you want to redirect after deleting last job:
-      // if (jobs.length <= 1) navigate('/somewhere');
     } catch (err) {
       console.error("Error deleting job:", err);
-
-      // Dismiss loading toast and show error
       toast.dismiss(loadingToastId);
-
       const errorMsg =
         err?.response?.data?.detail ||
         "Failed to delete job. Please try again.";
       toast.error(errorMsg, { duration: 4000 });
     } finally {
-      // clear per-item deleting flag
       setDeletingId(null);
     }
   };
@@ -172,36 +149,21 @@ const MyJobs = () => {
         position="top-center"
         toastOptions={{
           success: {
-            style: {
-              background: "#10b981",
-              color: "#fff",
-            },
-            iconTheme: {
-              primary: "#fff",
-              secondary: "#10b981",
-            },
+            style: { background: "#10b981", color: "#fff" },
+            iconTheme: { primary: "#fff", secondary: "#10b981" },
           },
           error: {
-            style: {
-              background: "#ef4444",
-              color: "#fff",
-            },
-            iconTheme: {
-              primary: "#fff",
-              secondary: "#ef4444",
-            },
+            style: { background: "#ef4444", color: "#fff" },
+            iconTheme: { primary: "#fff", secondary: "#ef4444" },
           },
           loading: {
-            style: {
-              background: "#3b82f6",
-              color: "#fff",
-            },
+            style: { background: "#3b82f6", color: "#fff" },
           },
         }}
       />
 
       <div className="container mx-auto max-w-7xl">
-        {/* Enhanced Header */}
+        {/* Header & Stats */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
@@ -298,7 +260,6 @@ const MyJobs = () => {
         {/* Search and Filter Bar */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
             <div className="flex-grow relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -310,45 +271,25 @@ const MyJobs = () => {
               />
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-              <button
-                onClick={() => setFilterStatus("all")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  filterStatus === "all"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                All ({jobs.length})
-              </button>
-              <button
-                onClick={() => setFilterStatus("active")}
-                className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-                  filterStatus === "active"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Active ({activeJobs})
-              </button>
-              <button
-                onClick={() => setFilterStatus("inactive")}
-                className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-                  filterStatus === "inactive"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <XCircle className="w-4 h-4 text-gray-600" />
-                Inactive ({jobs.length - activeJobs})
-              </button>
+              {["all", "active", "inactive"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={`px-4 py-2 rounded-lg font-medium transition capitalize ${
+                    filterStatus === status
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Content Section */}
+        {/* Jobs List */}
         {loading ? (
           <div className="flex flex-col justify-center items-center py-20">
             <div className="relative">
@@ -392,127 +333,70 @@ const MyJobs = () => {
               Showing {filteredJobs.length}{" "}
               {filteredJobs.length === 1 ? "job" : "jobs"}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Added 'auto-rows-fr' to ensure equal height */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {filteredJobs.map((job) => (
-                <div key={job.id} className="relative group">
-                  {/* Job Card Wrapper with Status Badge */}
-                  <div className="relative rounded-2xl overflow-hidden">
-                    <JobCard job={job} />
-
-                    {/* Status Badge Overlay - Below job type badge, aligned properly */}
-                    <div className="absolute top-14 right-6 z-10">
-                      {job.is_active ? (
-                        <div className="flex items-center gap-1 bg-green-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">
-                          <CheckCircle className="w-3 h-3" />
-                          Active
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 bg-gray-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">
-                          <Clock className="w-3 h-3" />
-                          Paused
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Overlay on Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
-                      <div className="w-full grid grid-cols-2 gap-2 pointer-events-auto">
-                        <button
-                          onClick={() => handleViewDetails(job.id)}
-                          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition text-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
+                // Added h-full to ensure card takes full height
+                <div key={job.id} className="relative group h-full">
+                  <div className="h-full flex flex-col relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow bg-white">
+                    {/* Pass isActive to JobCard to handle badge internally */}
+                    <JobCard job={job} isActive={job.is_active}>
+                      {/* Control Panel Buttons */}
+                      <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 mt-2">
+                        {/* 1. View Applicants (Primary) */}
                         <button
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevents clicking the parent card
-                            navigate(`/jobs/${job.id}/edit`); // Navigate to the Edit Page
+                            e.stopPropagation();
+                            handleViewApplicants(job.id);
                           }}
-                          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
+                          className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg transition text-sm"
+                        >
+                          <Users className="w-4 h-4" />
+                          View Applicants ({job.applications_count || 0})
+                        </button>
+
+                        {/* 2. Edit */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/jobs/${job.id}/edit`);
+                          }}
+                          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
                         >
                           <Edit3 className="w-4 h-4" />
                           Edit
                         </button>
+
+                        {/* 3. Pause/Activate */}
                         <button
                           onClick={() =>
                             handleToggleStatus(job.id, job.is_active)
                           }
-                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition text-sm ${
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition text-sm border ${
                             job.is_active
-                              ? "bg-orange-600 text-white hover:bg-orange-700"
-                              : "bg-green-600 text-white hover:bg-green-700"
+                              ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                              : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                           }`}
                         >
-                          {job.is_active ? (
-                            <>
-                              <XCircle className="w-4 h-4" />
-                              Pause
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4" />
-                              Activate
-                            </>
-                          )}
+                          {job.is_active ? "Pause" : "Activate"}
                         </button>
+
+                        {/* 4. Delete */}
                         <button
                           onClick={() => handleDelete(job.id)}
                           disabled={deletingId === job.id}
-                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition text-sm font-semibold
-                            ${
-                              deletingId === job.id
-                                ? "bg-red-500 cursor-not-allowed opacity-80"
-                                : "bg-red-600 hover:bg-red-700"
-                            }
-                          `}
+                          className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition text-sm font-medium mt-1"
                         >
                           {deletingId === job.id ? (
-                            <>
-                              <svg
-                                className="w-4 h-4 animate-spin"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeOpacity="0.25"
-                                />
-                                <path
-                                  d="M22 12a10 10 0 0 1-10 10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                              Deleting...
-                            </>
+                            "Deleting..."
                           ) : (
                             <>
-                              <Trash2 className="w-4 h-4" />
-                              Delete
+                              <Trash2 className="w-4 h-4" /> Delete Job
                             </>
                           )}
                         </button>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Stats Below Card */}
-                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500 px-2">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      {job.applications_count || 0} applications
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {job.views_count || 0} views
-                    </div>
+                    </JobCard>
                   </div>
                 </div>
               ))}

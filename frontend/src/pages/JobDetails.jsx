@@ -13,7 +13,9 @@ import {
   Edit,
   Eye,
   Sparkles,
-  Calendar, // Imported Calendar Icon
+  CheckCircle,
+  Calendar,
+  Lock, // Added Lock icon
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -25,14 +27,16 @@ const JobDetails = () => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
+        // 1. Fetch Job Details
         const response = await api.get(`/jobs/${id}`);
         let jobData = response.data;
 
-        // View Tracking Logic
+        // 2. View Tracking Logic
         try {
           const viewResponse = await api.post(`/jobs/${id}/view`);
           if (viewResponse.data.views !== undefined) {
@@ -43,6 +47,19 @@ const JobDetails = () => {
         }
 
         setJob(jobData);
+
+        // 3. Check if student has already applied
+        if (user && (user.role === "student" || user.role === "STUDENT")) {
+          try {
+            const appsResponse = await api.get("/applications/me");
+            const alreadyApplied = appsResponse.data.some(
+              (app) => app.job_id === Number(id)
+            );
+            setHasApplied(alreadyApplied);
+          } catch (appErr) {
+            console.error("Failed to check application status:", appErr);
+          }
+        }
       } catch (err) {
         console.error("Error fetching job details:", err);
         setError("Job not found or has been removed.");
@@ -52,20 +69,44 @@ const JobDetails = () => {
     };
 
     if (id) fetchJobDetails();
-  }, [id]);
+  }, [id, user]);
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!user) {
       toast.error("Please login to apply!");
       navigate("/login");
       return;
     }
-    toast.success("Application feature coming soon!");
+
+    const confirmApply = window.confirm(
+      `Apply to ${job.title} at ${job.company_name}?`
+    );
+    if (!confirmApply) return;
+
+    const loadingToast = toast.loading("Submitting application...");
+
+    try {
+      await api.post(`/applications/${id}`);
+
+      toast.success("Application submitted successfully!", {
+        id: loadingToast,
+      });
+
+      // Optional: Redirect to My Applications page
+      setTimeout(() => navigate("/my-applications"), 1000);
+    } catch (error) {
+      console.error("Apply Error:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to apply.";
+      toast.error(errorMsg, { id: loadingToast });
+    }
   };
 
   const isStudent = user?.role === "student" || user?.role === "STUDENT";
   const isCompany = user?.role === "company" || user?.role === "COMPANY";
   const isOwner = isCompany && user?.company_profile?.id === job?.company_id;
+
+  // Logic to check if job is full
+  const isFilled = job?.max_seats <= 0;
 
   if (loading)
     return (
@@ -125,15 +166,24 @@ const JobDetails = () => {
                     <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
                       {job.title}
                     </h1>
-                    <span
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                        job.job_type === "Internship"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {job.job_type}
-                    </span>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                          job.job_type === "Internship"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {job.job_type}
+                      </span>
+
+                      {/* FILLED BADGE */}
+                      {isFilled && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                          <Lock className="w-3 h-3" /> Positions Filled
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -162,6 +212,7 @@ const JobDetails = () => {
 
               {/* DYNAMIC ACTION BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-3 lg:mt-0 mt-4">
+                {/* CASE 1: Owner Company */}
                 {isOwner && (
                   <>
                     <button
@@ -172,9 +223,7 @@ const JobDetails = () => {
                       Edit Job
                     </button>
                     <button
-                      onClick={() =>
-                        toast.success("Applicants feature coming soon!")
-                      }
+                      onClick={() => navigate(`/jobs/${id}/applicants`)}
                       className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300"
                     >
                       <Users className="w-5 h-5" />
@@ -183,18 +232,40 @@ const JobDetails = () => {
                   </>
                 )}
 
-                {(isStudent || !user) && (
-                  <button
-                    onClick={handleApply}
-                    className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Apply Now
-                  </button>
-                )}
+                {/* CASE 2: Student or Guest */}
+                {(isStudent || !user) &&
+                  (hasApplied ? (
+                    // APPLIED STATE
+                    <button
+                      disabled
+                      className="flex items-center justify-center gap-2 px-8 py-4 bg-green-100 text-green-700 font-bold rounded-xl border border-green-200 cursor-default"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Applied
+                    </button>
+                  ) : isFilled ? (
+                    // FILLED STATE
+                    <button
+                      disabled
+                      className="flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 text-gray-500 font-bold rounded-xl border border-gray-200 cursor-not-allowed"
+                    >
+                      <Lock className="w-5 h-5" />
+                      Positions Filled
+                    </button>
+                  ) : (
+                    // NORMAL APPLY STATE
+                    <button
+                      onClick={handleApply}
+                      className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      Apply Now
+                    </button>
+                  ))}
 
+                {/* CASE 3: Other Company */}
                 {isCompany && !isOwner && (
-                  <div className="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-xl border border-gray-200 text-center">
+                  <div className="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-xl border border-gray-200 text-center cursor-default">
                     View Only
                   </div>
                 )}
@@ -264,13 +335,19 @@ const JobDetails = () => {
                       <Users className="w-3 h-3" />
                       Openings
                     </label>
-                    <p className="text-gray-900 font-semibold">
-                      {job.max_seats || 1} Position
-                      {job.max_seats > 1 ? "s" : ""}
+                    <p
+                      className={`font-semibold ${
+                        isFilled ? "text-red-600" : "text-gray-900"
+                      }`}
+                    >
+                      {isFilled
+                        ? "0 (Filled)"
+                        : `${job.max_seats} Position${
+                            job.max_seats > 1 ? "s" : ""
+                          }`}
                     </p>
                   </div>
 
-                  {/* NEW: Deadline Section */}
                   <div className="pt-4 border-t border-gray-200">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-2">
                       <Calendar className="w-3 h-3" />
@@ -303,15 +380,33 @@ const JobDetails = () => {
                   </div>
                 </div>
 
-                {(isStudent || !user) && (
-                  <button
-                    onClick={handleApply}
-                    className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Apply Now
-                  </button>
-                )}
+                {/* Sidebar Apply CTA */}
+                {(isStudent || !user) &&
+                  (hasApplied ? (
+                    <button
+                      disabled
+                      className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl border border-green-200 cursor-default"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Applied
+                    </button>
+                  ) : isFilled ? (
+                    <button
+                      disabled
+                      className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-500 font-bold rounded-xl border border-gray-200 cursor-not-allowed"
+                    >
+                      <Lock className="w-5 h-5" />
+                      Positions Filled
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleApply}
+                      className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      Apply Now
+                    </button>
+                  ))}
               </div>
             </div>
           </div>

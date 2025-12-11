@@ -1,7 +1,8 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import toast from "react-hot-toast";
+// FIX 1: Import Toaster here
+import toast, { Toaster } from "react-hot-toast";
 import {
   Eye,
   EyeOff,
@@ -47,8 +48,14 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       console.error("Full Login Error Object:", error);
+
+      // Robust error handling
       if (error.response && error.response.data) {
-        const errorMsg = error.response.data.detail || "Login failed";
+        // FastAPI usually sends 'detail', sometimes it is a string, sometimes an array
+        const detail = error.response.data.detail;
+        const errorMsg =
+          typeof detail === "string" ? detail : "Invalid credentials"; // Fallback if detail is complex object
+
         toast.error(errorMsg, {
           icon: <AlertCircle className="w-5 h-5 text-red-600" />,
         });
@@ -64,6 +71,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center py-12 px-4">
+      {/* FIX 2: Add Toaster Component here so notifications can appear */}
+      <Toaster position="top-center" />
+
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 -right-40 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl animate-pulse"></div>

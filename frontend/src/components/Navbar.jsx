@@ -1,6 +1,17 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, User, LogOut, PlusCircle, Menu, X, Home, Search, LayoutDashboard, Sparkles } from "lucide-react";
+import {
+  Briefcase,
+  User,
+  LogOut,
+  PlusCircle,
+  Menu,
+  X,
+  Home,
+  Search,
+  LayoutDashboard,
+  Sparkles,
+} from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
 const Navbar = () => {
@@ -37,7 +48,6 @@ const Navbar = () => {
     <nav className="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-100">
       <div className="container mx-auto px-4 sm:px-6 py-3">
         <div className="flex justify-between items-center">
-          
           {/* LOGO */}
           <Link
             to="/"
@@ -79,11 +89,11 @@ const Navbar = () => {
             {/* 2. AUTH STATUS CHECK LOGIC */}
             {loading ? (
               // OPTION A: Show nothing while loading (prevents flash)
-              <div className="w-24"></div> 
+              <div className="w-24"></div>
             ) : user ? (
               // IF LOADED AND USER EXISTS
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                
+                {/* --- COMPANY LINKS --- */}
                 {isCompany() && (
                   <>
                     <Link
@@ -108,8 +118,39 @@ const Navbar = () => {
                   </>
                 )}
 
+                {/* --- STUDENT LINKS (ADDED) --- */}
+                {!isCompany() && (
+                  <>
+                    <Link
+                      to="/recommendations"
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition ${
+                        isActive("/recommendations")
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="hidden lg:inline">Recommendations</span>
+                      <span className="lg:hidden">AI Picks</span>
+                    </Link>
+
+                    <Link
+                      to="/my-applications"
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition ${
+                        isActive("/my-applications")
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      <span className="hidden lg:inline">My Applications</span>
+                      <span className="lg:hidden">Apps</span>
+                    </Link>
+                  </>
+                )}
+
                 {/* User Profile Dropdown Trigger */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 ml-2">
                   <Link
                     to="/profile"
                     className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition group"
@@ -175,7 +216,6 @@ const Navbar = () => {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-100 pt-4 animate-in slide-in-from-top">
             <div className="flex flex-col space-y-2">
-              
               <Link
                 to="/"
                 onClick={handleLinkClick}
@@ -188,7 +228,7 @@ const Navbar = () => {
                 <Home className="w-5 h-5" />
                 Home
               </Link>
-              
+
               <Link
                 to="/jobs"
                 onClick={handleLinkClick}
@@ -204,7 +244,9 @@ const Navbar = () => {
 
               {/* 3. MOBILE AUTH CHECK LOGIC */}
               {loading ? (
-                 <div className="px-4 py-3 text-gray-400 text-sm">Checking authentication...</div>
+                <div className="px-4 py-3 text-gray-400 text-sm">
+                  Checking authentication...
+                </div>
               ) : user ? (
                 <>
                   <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
@@ -225,6 +267,7 @@ const Navbar = () => {
                     </div>
                   </div>
 
+                  {/* --- COMPANY MOBILE LINKS --- */}
                   {isCompany() && (
                     <>
                       <Link
@@ -247,6 +290,37 @@ const Navbar = () => {
                       >
                         <PlusCircle className="w-5 h-5" />
                         Post New Job
+                      </Link>
+                    </>
+                  )}
+
+                  {/* --- STUDENT MOBILE LINKS (ADDED) --- */}
+                  {!isCompany() && (
+                    <>
+                      <Link
+                        to="/recommendations"
+                        onClick={handleLinkClick}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+                          isActive("/recommendations")
+                            ? "text-blue-600 bg-blue-50"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        AI Recommendations
+                      </Link>
+
+                      <Link
+                        to="/my-applications"
+                        onClick={handleLinkClick}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+                          isActive("/my-applications")
+                            ? "text-blue-600 bg-blue-50"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Briefcase className="w-5 h-5" />
+                        My Applications
                       </Link>
                     </>
                   )}
