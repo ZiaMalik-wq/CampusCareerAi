@@ -3,16 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import { Calendar } from 'lucide-react'; // Added Icon
 
 const EditJob = () => {
-  const { id } = useParams(); // Get Job ID from URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form State matching the JobUpdate Schema
+  // 1. Updated State to include deadline
   const [jobData, setJobData] = useState({
     title: '',
     description: '',
@@ -20,17 +21,25 @@ const EditJob = () => {
     salary_range: '',
     job_type: 'Full-time',
     max_seats: 1,
-    is_active: true
+    is_active: true,
+    deadline: '' 
   });
 
-  // 1. Fetch Existing Data
+  // 2. Fetch Existing Data
   useEffect(() => {
     const fetchJob = async () => {
       try {
         const response = await api.get(`/jobs/${id}`);
         const data = response.data;
         
-        // Populate form with existing data
+        // Helper: The datetime-local input needs format "YYYY-MM-DDTHH:mm"
+        // Backend usually returns "2025-12-01T12:00:00" (with seconds)
+        // We slice the string to remove seconds for the input to recognize it
+        let formattedDeadline = '';
+        if (data.deadline) {
+          formattedDeadline = data.deadline.slice(0, 16);
+        }
+
         setJobData({
           title: data.title,
           description: data.description,
@@ -38,14 +47,10 @@ const EditJob = () => {
           salary_range: data.salary_range || '',
           job_type: data.job_type,
           max_seats: data.max_seats || 1,
-          is_active: data.is_active
+          is_active: data.is_active,
+          deadline: formattedDeadline
         });
 
-        // Security check (Frontend side)
-        // Note: Backend also checks this, but good to redirect early if not owner
-        // (Assuming data.company_name matches user's company or similar logic, 
-        //  but strict check happens on backend submission)
-        
       } catch (err) {
         console.error('Error fetching job:', err);
         toast.error('Could not load job details.');
@@ -63,18 +68,22 @@ const EditJob = () => {
     setJobData({ ...jobData, [e.target.name]: value });
   };
 
-  // 2. Submit Updates
+  // 3. Submit Updates
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      // API call: PUT /jobs/{id}
-      await api.put(`/jobs/${id}`, jobData);
+      // Prepare payload: Convert empty deadline string to null
+      const payload = { ...jobData };
+      if (!payload.deadline) {
+        payload.deadline = null;
+      }
+
+      await api.put(`/jobs/${id}`, payload);
       
       toast.success('Job updated successfully!');
       
-      // Navigate back to details page
       setTimeout(() => {
         navigate(`/jobs/${id}`);
       }, 1000);
@@ -170,19 +179,37 @@ const EditJob = () => {
             </div>
           </div>
 
-          {/* Active Status Toggle */}
-          <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-             <input 
-                type="checkbox"
-                name="is_active"
-                checked={jobData.is_active}
-                onChange={handleChange}
-                id="is_active"
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-             />
-             <label htmlFor="is_active" className="text-gray-700 font-medium">
-               Job is Active (Visible to students)
-             </label>
+          {/* Deadline & Active Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+             {/* Deadline Field */}
+             <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-pink-600" />
+                  Deadline
+                </label>
+                <input 
+                  type="datetime-local" 
+                  name="deadline"
+                  value={jobData.deadline}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                />
+             </div>
+
+             {/* Active Status Toggle */}
+             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 h-fit mb-0.5">
+               <input 
+                  type="checkbox"
+                  name="is_active"
+                  checked={jobData.is_active}
+                  onChange={handleChange}
+                  id="is_active"
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+               />
+               <label htmlFor="is_active" className="text-gray-700 font-medium cursor-pointer">
+                 Job is Active (Visible)
+               </label>
+            </div>
           </div>
 
           {/* Description */}
