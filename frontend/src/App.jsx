@@ -15,6 +15,9 @@ import Profile from "./pages/Profile";
 import RecommendedJobs from './pages/RecommendedJobs';
 import MyApplications from './pages/MyApplications';
 import JobApplicants from './pages/JobApplicants';
+import InterviewPrep from './pages/InterviewPrep';
+import Analytics from './pages/Analytics';
+
 
 function App() {
   return (
@@ -38,6 +41,8 @@ function App() {
             <Route path="/recommendations" element={<RecommendedJobs />} />
             <Route path="/my-applications" element={<MyApplications />} />
             <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
+            <Route path="/jobs/:id/interview-prep" element={<InterviewPrep />} />
+            <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </Router>

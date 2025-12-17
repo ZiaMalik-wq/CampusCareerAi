@@ -15,7 +15,7 @@ import {
   Globe,
   Briefcase,
   Users,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -25,8 +25,8 @@ const Profile = () => {
   const [resumeLoading, setResumeLoading] = useState(false);
 
   // Determine user role
-  const isCompany = user?.role === 'company' || user?.role === 'COMPANY';
-  const isStudent = user?.role === 'student' || user?.role === 'STUDENT';
+  const isCompany = user?.role === "company" || user?.role === "COMPANY";
+  const isStudent = user?.role === "student" || user?.role === "STUDENT";
 
   // Student Profile State
   const [studentData, setStudentData] = useState({
@@ -72,7 +72,10 @@ const Profile = () => {
       }
     } else {
       if (user) {
-        setStudentData((prev) => ({ ...prev, full_name: user.full_name || "" }));
+        setStudentData((prev) => ({
+          ...prev,
+          full_name: user.full_name || "",
+        }));
       }
       setLoading(true);
     }
@@ -80,16 +83,20 @@ const Profile = () => {
     try {
       const response = await api.get("/students/profile");
       const profileData = response.data;
-      
+
       if (Array.isArray(profileData.skills)) {
         profileData.skills = profileData.skills.join(", ");
       }
 
       setStudentData(profileData);
-      const resumeInfo = profileData.resume_url || profileData.resume_filename || null;
+      const resumeInfo =
+        profileData.resume_url || profileData.resume_filename || null;
       setExistingResume(resumeInfo);
 
-      localStorage.setItem("student_profile_cache", JSON.stringify(profileData));
+      localStorage.setItem(
+        "student_profile_cache",
+        JSON.stringify(profileData)
+      );
     } catch (error) {
       console.log("Student profile fetch error:", error);
     } finally {
@@ -106,9 +113,9 @@ const Profile = () => {
       setCompanyData(parsed);
     } else {
       if (user) {
-        setCompanyData((prev) => ({ 
-          ...prev, 
-          company_name: user.full_name || user.company_name || "" 
+        setCompanyData((prev) => ({
+          ...prev,
+          company_name: user.full_name || user.company_name || "",
         }));
       }
       setLoading(true);
@@ -117,9 +124,12 @@ const Profile = () => {
     try {
       const response = await api.get("/companies/profile");
       const profileData = response.data;
-      
+
       setCompanyData(profileData);
-      localStorage.setItem("company_profile_cache", JSON.stringify(profileData));
+      localStorage.setItem(
+        "company_profile_cache",
+        JSON.stringify(profileData)
+      );
     } catch (error) {
       console.log("Company profile fetch error:", error);
       // If endpoint doesn't exist, use user data
@@ -151,7 +161,7 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
 
-    const loadingToast = toast.loading('Updating profile...');
+    const loadingToast = toast.loading("Updating profile...");
 
     const payload = {
       ...studentData,
@@ -164,7 +174,8 @@ const Profile = () => {
       localStorage.setItem("student_profile_cache", JSON.stringify(payload));
     } catch (error) {
       console.error("Update Error:", error);
-      const errorMsg = error.response?.data?.detail || "Failed to update profile.";
+      const errorMsg =
+        error.response?.data?.detail || "Failed to update profile.";
       toast.error(errorMsg, { id: loadingToast });
     } finally {
       setLoading(false);
@@ -176,15 +187,21 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
 
-    const loadingToast = toast.loading('Updating company profile...');
+    const loadingToast = toast.loading("Updating company profile...");
 
     try {
       await api.put("/companies/profile", companyData);
-      toast.success("Company profile updated successfully!", { id: loadingToast });
-      localStorage.setItem("company_profile_cache", JSON.stringify(companyData));
+      toast.success("Company profile updated successfully!", {
+        id: loadingToast,
+      });
+      localStorage.setItem(
+        "company_profile_cache",
+        JSON.stringify(companyData)
+      );
     } catch (error) {
       console.error("Update Error:", error);
-      const errorMsg = error.response?.data?.detail || "Failed to update profile.";
+      const errorMsg =
+        error.response?.data?.detail || "Failed to update profile.";
       toast.error(errorMsg, { id: loadingToast });
     } finally {
       setLoading(false);
@@ -202,7 +219,7 @@ const Profile = () => {
     }
 
     setResumeLoading(true);
-    const loadingToast = toast.loading('Uploading and analyzing resume...');
+    const loadingToast = toast.loading("Uploading and analyzing resume...");
 
     const data = new FormData();
     data.append("file", file);
@@ -220,7 +237,8 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Upload Error:", error);
-      const errorMsg = error.response?.data?.detail || "Failed to upload resume.";
+      const errorMsg =
+        error.response?.data?.detail || "Failed to upload resume.";
       toast.error(errorMsg, { id: loadingToast });
     } finally {
       setResumeLoading(false);
@@ -255,8 +273,8 @@ const Profile = () => {
                 {isCompany ? "Company Profile" : "My Profile"}
               </h1>
               <p className="text-gray-600 mt-1">
-                {isCompany 
-                  ? "Manage your company information and job postings" 
+                {isCompany
+                  ? "Manage your company information and job postings"
                   : "Update your details and upload your resume"}
               </p>
             </div>
@@ -270,7 +288,9 @@ const Profile = () => {
             <div className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 p-8">
               <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200">
                 <User className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-800">Personal Details</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Personal Details
+                </h2>
               </div>
 
               <form onSubmit={handleStudentUpdate} className="space-y-6">
@@ -376,7 +396,8 @@ const Profile = () => {
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
                 <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-blue-700">
-                  Upload your resume in PDF format. Our AI will analyze it to recommend the best jobs for you.
+                  Upload your resume in PDF format. Our AI will analyze it to
+                  recommend the best jobs for you.
                 </p>
               </div>
 
@@ -392,16 +413,24 @@ const Profile = () => {
                 {resumeLoading ? (
                   <div className="flex flex-col items-center">
                     <div className="animate-spin rounded-full h-10 w-10 border-4 border-purple-100 border-t-purple-600 mb-3"></div>
-                    <span className="text-purple-600 font-semibold">Analyzing PDF...</span>
-                    <span className="text-xs text-gray-500 mt-1">This may take a moment</span>
+                    <span className="text-purple-600 font-semibold">
+                      Analyzing PDF...
+                    </span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      This may take a moment
+                    </span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
                     <Upload className="w-12 h-12 text-gray-400 mb-3" />
                     <span className="text-gray-700 font-semibold text-lg">
-                      {existingResume ? "Upload New Resume" : "Click to Upload PDF"}
+                      {existingResume
+                        ? "Upload New Resume"
+                        : "Click to Upload PDF"}
                     </span>
-                    <span className="text-sm text-gray-500 mt-2">PDF files only • Max 5MB</span>
+                    <span className="text-sm text-gray-500 mt-2">
+                      PDF files only • Max 5MB
+                    </span>
                   </div>
                 )}
               </div>
@@ -416,7 +445,10 @@ const Profile = () => {
                       <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">
                         {resumeFile ? "✓ New Upload" : "Current Resume"}
                       </p>
-                      <p className="text-sm text-gray-800 truncate font-medium max-w-[150px]" title={getResumeName()}>
+                      <p
+                        className="text-sm text-gray-800 truncate font-medium max-w-[150px]"
+                        title={getResumeName()}
+                      >
                         {getResumeName()}
                       </p>
                     </div>
@@ -434,7 +466,9 @@ const Profile = () => {
                     </a>
                   )}
 
-                  {resumeFile && <CheckCircle className="w-6 h-6 text-green-600" />}
+                  {resumeFile && (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  )}
                 </div>
               )}
             </div>
@@ -446,15 +480,20 @@ const Profile = () => {
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 p-8 max-w-3xl mx-auto">
             <div className="flex items-center gap-2 mb-8 pb-4 border-b border-gray-200">
               <Building2 className="w-6 h-6 text-blue-600" />
-              <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Company Information
+              </h2>
             </div>
 
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8 flex gap-3">
               <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-blue-900 mb-1">Company Profile</h4>
+                <h4 className="font-semibold text-blue-900 mb-1">
+                  Company Profile
+                </h4>
                 <p className="text-sm text-blue-700">
-                  Keep your company information up to date to attract the best talent. This information will be visible to all students.
+                  Keep your company information up to date to attract the best
+                  talent. This information will be visible to all students.
                 </p>
               </div>
             </div>
@@ -510,7 +549,10 @@ const Profile = () => {
 
               <p className="text-xs text-gray-500 flex items-start gap-2">
                 <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                <span>Location and website are optional but recommended for better visibility</span>
+                <span>
+                  Location and website are optional but recommended for better
+                  visibility
+                </span>
               </p>
 
               <div className="pt-4">

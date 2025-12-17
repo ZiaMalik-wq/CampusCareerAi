@@ -12,17 +12,16 @@ import {
   Eye,
   Edit3,
   Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
   Search,
   ArrowUpRight,
+  BarChart2,
+  Clock,
 } from "lucide-react";
 
 const MyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
+  const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -86,34 +85,6 @@ const MyJobs = () => {
     }
   };
 
-  // Calculate stats
-  const activeJobs = jobs.filter((job) => job.is_active).length;
-  const totalApplications = jobs.reduce(
-    (sum, job) => sum + (job.applications_count || 0),
-    0
-  );
-  const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0);
-
-  // Filter jobs
-  const filteredJobs = jobs.filter((job) => {
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && job.is_active) ||
-      (filterStatus === "inactive" && !job.is_active);
-
-    const matchesSearch =
-      searchQuery === "" ||
-      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesStatus && matchesSearch;
-  });
-
-  // Action handlers
-  const handleViewApplicants = (jobId) => {
-    navigate(`/jobs/${jobId}/applicants`);
-  };
-
   const handleDelete = async (jobId) => {
     if (
       !window.confirm(
@@ -142,9 +113,44 @@ const MyJobs = () => {
     }
   };
 
+  const handleViewApplicants = (jobId) => {
+    navigate(`/jobs/${jobId}/applicants`);
+  };
+
+  // Calculate stats
+  const activeJobs = jobs.filter((job) => job.is_active).length;
+  const totalApplications = jobs.reduce(
+    (sum, job) => sum + (job.applications_count || 0),
+    0
+  );
+  const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0);
+
+  // Calculate recent applications (last 7 days)
+  const recentApplications = jobs.reduce((sum, job) => {
+    if (!job.created_at) return sum;
+    const jobDate = new Date(job.created_at);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return jobDate >= weekAgo ? sum + (job.applications_count || 0) : sum;
+  }, 0);
+
+  // Filter jobs
+  const filteredJobs = jobs.filter((job) => {
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && job.is_active) ||
+      (filterStatus === "inactive" && !job.is_active);
+
+    const matchesSearch =
+      searchQuery === "" ||
+      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.company?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesStatus && matchesSearch;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
-      {/* Toast Notifications */}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -163,7 +169,7 @@ const MyJobs = () => {
       />
 
       <div className="container mx-auto max-w-7xl">
-        {/* Header & Stats */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
@@ -189,69 +195,106 @@ const MyJobs = () => {
             </button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <Briefcase className="w-6 h-6 text-blue-600" />
-                </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Active Jobs
-                </span>
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {activeJobs}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    of {jobs.length} total
-                  </div>
-                </div>
-                <TrendingUp className="w-5 h-5 text-green-600" />
-              </div>
+          {/* Quick Stats Section with Analytics Link */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 shadow-xl mb-8 relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-100 rounded-xl">
-                  <Users className="w-6 h-6 text-purple-600" />
-                </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Applications
-                </span>
-              </div>
-              <div className="flex items-end justify-between">
+            <div className="relative">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-white mb-1">
+                    Quick Overview
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    Your recruitment metrics at a glance
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/analytics")}
+                  className="flex items-center gap-2 px-5 py-3 bg-white text-blue-600 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all duration-200 group"
+                >
+                  <BarChart2 className="w-5 h-5" />
+                  <span>View Full Analytics</span>
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Active Jobs */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Briefcase className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                      Active Jobs
+                    </span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div className="text-4xl font-bold text-white">
+                      {activeJobs}
+                    </div>
+                    <div className="text-sm text-white/70">
+                      of {jobs.length}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Applications */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                      Applications
+                    </span>
+                  </div>
+                  <div className="text-4xl font-bold text-white">
                     {totalApplications}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-white/70 mt-1">
                     total received
                   </div>
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 rounded-xl">
-                  <Eye className="w-6 h-6 text-green-600" />
-                </div>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Total Views
-                </span>
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                {/* Total Views */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Eye className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                      Total Views
+                    </span>
+                  </div>
+                  <div className="text-4xl font-bold text-white">
                     {totalViews}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">impressions</div>
+                  <div className="text-sm text-white/70 mt-1">impressions</div>
                 </div>
-                <TrendingUp className="w-5 h-5 text-green-600" />
+
+                {/* Recent Activity */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Clock className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                      Last 7 Days
+                    </span>
+                  </div>
+                  <div className="text-4xl font-bold text-white">
+                    {recentApplications}
+                  </div>
+                  <div className="text-sm text-white/70 mt-1">
+                    new applications
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -333,17 +376,14 @@ const MyJobs = () => {
               Showing {filteredJobs.length}{" "}
               {filteredJobs.length === 1 ? "job" : "jobs"}
             </div>
-            {/* Added 'auto-rows-fr' to ensure equal height */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {filteredJobs.map((job) => (
-                // Added h-full to ensure card takes full height
                 <div key={job.id} className="relative group h-full">
                   <div className="h-full flex flex-col relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow bg-white">
-                    {/* Pass isActive to JobCard to handle badge internally */}
                     <JobCard job={job} isActive={job.is_active}>
                       {/* Control Panel Buttons */}
                       <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 mt-2">
-                        {/* 1. View Applicants (Primary) */}
+                        {/* 1. View Applicants */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

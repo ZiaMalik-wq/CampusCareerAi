@@ -233,35 +233,47 @@ const JobDetails = () => {
                 )}
 
                 {/* CASE 2: Student or Guest */}
-                {(isStudent || !user) &&
-                  (hasApplied ? (
-                    // APPLIED STATE
-                    <button
-                      disabled
-                      className="flex items-center justify-center gap-2 px-8 py-4 bg-green-100 text-green-700 font-bold rounded-xl border border-green-200 cursor-default"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Applied
-                    </button>
-                  ) : isFilled ? (
-                    // FILLED STATE
-                    <button
-                      disabled
-                      className="flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 text-gray-500 font-bold rounded-xl border border-gray-200 cursor-not-allowed"
-                    >
-                      <Lock className="w-5 h-5" />
-                      Positions Filled
-                    </button>
-                  ) : (
-                    // NORMAL APPLY STATE
-                    <button
-                      onClick={handleApply}
-                      className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                      <Sparkles className="w-5 h-5" />
-                      Apply Now
-                    </button>
-                  ))}
+                {(isStudent || !user) && (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    {/* NEW AI PREP BUTTON */}
+                    {isStudent && (
+                      <button
+                        onClick={() => navigate(`/jobs/${id}/interview-prep`)}
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-50 text-purple-700 border-2 border-purple-200 font-bold rounded-xl hover:bg-purple-100 hover:border-purple-300 transition-all duration-300"
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        AI Interview Prep
+                      </button>
+                    )}
+
+                    {/* EXISTING LOGIC FOR APPLY BUTTON */}
+                    {hasApplied ? (
+                      <button
+                        disabled
+                        className="flex items-center justify-center gap-2 px-8 py-4 bg-green-100 text-green-700 font-bold rounded-xl border border-green-200 cursor-default"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        Applied
+                      </button>
+                    ) : isFilled ? (
+                      <button
+                        disabled
+                        className="flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 text-gray-500 font-bold rounded-xl border border-gray-200 cursor-not-allowed"
+                      >
+                        <Lock className="w-5 h-5" />
+                        Positions Filled
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleApply}
+                        className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300"
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        Apply Now
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* CASE 3: Other Company */}
                 {isCompany && !isOwner && (
