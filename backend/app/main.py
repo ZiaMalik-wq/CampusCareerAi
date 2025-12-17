@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("App starting...")
-    check_db_connection()
+    # check_db_connection()
     yield
     logger.info("App shutdown")
 

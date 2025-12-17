@@ -29,3 +29,11 @@ class JobView(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="users.id")
     ip_address: Optional[str] = None
     viewed_at: datetime = Field(default_factory=datetime.utcnow)
+
+class SavedJob(SQLModel, table=True):
+    __tablename__ = "saved_jobs"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
+    job_id: int = Field(foreign_key="jobs.id")
+    saved_at: datetime = Field(default_factory=datetime.utcnow)

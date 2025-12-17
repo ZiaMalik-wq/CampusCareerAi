@@ -1,10 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.models.auth import UserRole
 from typing import Optional
 from app.models.job import Job
 from app.models.application import ApplicationStatus
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 # 1. Schema for User Registration (What the Frontend sends)
 class UserCreate(BaseModel):
@@ -45,6 +45,7 @@ class JobPublic(JobCreate):
     views_count: int = 0
     deadline: Optional[datetime] = None
     applications_count: int = 0
+    is_saved: bool = False
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -133,3 +134,20 @@ class ApplicantPublic(BaseModel):
 # Input Schema for updating status
 class ApplicationUpdate(BaseModel):
     status: ApplicationStatus
+    
+
+class TechnicalQuestion(BaseModel):
+    question: str
+    expected_answer_key_points: str
+    difficulty: Literal["Easy", "Medium", "Hard"]
+
+
+class BehavioralQuestion(BaseModel):
+    question: str
+    tip: str
+
+
+class InterviewPrepResponse(BaseModel):
+    technical_questions: List[TechnicalQuestion] = Field(min_length=5, max_length=5)
+    behavioral_questions: List[BehavioralQuestion] = Field(min_length=3, max_length=3)
+    resume_feedback: str

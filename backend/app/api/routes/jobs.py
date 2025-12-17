@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, func, select
 from app.db.session import get_session
 from app.models.auth import User, UserRole
-from app.models.job import Job, JobView
+from app.models.job import Job, JobView, SavedJob
 from app.schemas import JobCreate, JobPublic, JobUpdate, JobRecommendation
 from app.api.deps import get_current_user, get_optional_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
+from app.core.llm import generate_interview_questions 
 import logging
 from sqlmodel import select, col, or_
 from app.core.embedding_utils import build_student_embedding_text, build_job_embedding_text
@@ -382,7 +383,7 @@ def read_my_jobs(
 @router.get("/", response_model=list[JobPublic])
 def read_jobs(
     session: Session = Depends(get_session),
-    current_user: Optional[User] = Depends(get_optional_user),  # Add optional auth
+    current_user: Optional[User] = Depends(get_optional_user),
     offset: int = 0,
     limit: int = 20,
 ):
@@ -414,9 +415,41 @@ def read_jobs(
         if job.company:
             job_data["company_name"] = job.company.company_name
             job_data["company_location"] = job.company.location
+            job_data["is_saved"] = check_is_saved(session, current_user, job.id)
             
         public_jobs.append(JobPublic(**job_data))
 
+    return public_jobs
+
+
+@router.get("/saved", response_model=list[JobPublic])
+def get_saved_jobs(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all jobs saved by the student."""
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students have saved jobs")
+    
+    statement = (
+        select(Job)
+        .join(SavedJob, Job.id == SavedJob.job_id)
+        .where(SavedJob.user_id == current_user.id)
+        .order_by(SavedJob.saved_at.desc())
+    )
+    
+    jobs = session.exec(statement).all()
+    
+    public_jobs = []
+    for job in jobs:
+        job_data = job.model_dump()
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+        
+        job_data["is_saved"] = True 
+        public_jobs.append(JobPublic(**job_data))
+        
     return public_jobs
 
 @router.put("/{job_id}", response_model=JobPublic)
@@ -493,7 +526,8 @@ def delete_job(
 @router.get("/{job_id}", response_model=JobPublic)
 def read_job_by_id(
     job_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_user)
 ):
     """
     Get details of a specific job.
@@ -507,6 +541,7 @@ def read_job_by_id(
     if job.company:
         job_data["company_name"] = job.company.company_name
         job_data["company_location"] = job.company.location
+        job_data["is_saved"] = check_is_saved(session, current_user, job.id)
         
     return JobPublic(**job_data)
 
@@ -608,3 +643,105 @@ def increment_job_view(
         return {"message": "View tracked", "views": job.views_count}
     
     return {"message": "Duplicate view ignored", "views": job.views_count}
+
+def check_is_saved(session: Session, user: Optional[User], job_id: int) -> bool:
+    if not user or user.role != UserRole.STUDENT:
+        return False
+    
+    exists = session.exec(
+        select(SavedJob)
+        .where(SavedJob.user_id == user.id)
+        .where(SavedJob.job_id == job_id)
+    ).first()
+    
+    return True if exists else False
+
+@router.post("/{job_id}/save", response_model=dict)
+def save_job(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Save a job for later."""
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students can save jobs")
+
+    # Check if job exists
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Check if already saved
+    existing = session.exec(
+        select(SavedJob)
+        .where(SavedJob.user_id == current_user.id)
+        .where(SavedJob.job_id == job_id)
+    ).first()
+
+    if existing:
+        return {"message": "Job already saved"}
+
+    saved_job = SavedJob(user_id=current_user.id, job_id=job_id)
+    session.add(saved_job)
+    session.commit()
+    
+    return {"message": "Job saved successfully"}
+
+@router.delete("/{job_id}/save", response_model=dict)
+def unsave_job(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Unsave a job."""
+    statement = select(SavedJob).where(
+        SavedJob.user_id == current_user.id,
+        SavedJob.job_id == job_id
+    )
+    saved_job = session.exec(statement).first()
+    
+    if not saved_job:
+        raise HTTPException(status_code=404, detail="Job not in saved list")
+
+    session.delete(saved_job)
+    session.commit()
+    
+    return {"message": "Job removed from saved list"}
+
+@router.post("/{job_id}/interview-prep")
+def get_interview_prep(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generates AI-powered interview questions tailored to the student and job.
+    """
+    # 1. Security Check
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students can access interview prep")
+
+    # 2. Fetch Job
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # 3. Fetch Student Data
+    student = current_user.student_profile
+    if not student or not student.resume_text:
+        raise HTTPException(
+            status_code=400, 
+            detail="Please upload your resume first so the AI can analyze it."
+        )
+
+    # 4. Generate AI Content
+    # We assume 'student.skills' is useful context too
+    resume_context = f"Skills: {student.skills}. \nExperience: {student.resume_text}"
+    
+    ai_result = generate_interview_questions(
+        job_title=job.title,
+        job_desc=job.description,
+        student_resume=resume_context
+    )
+    
+    return ai_result
