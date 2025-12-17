@@ -151,3 +151,20 @@ class InterviewPrepResponse(BaseModel):
     technical_questions: List[TechnicalQuestion] = Field(min_length=5, max_length=5)
     behavioral_questions: List[BehavioralQuestion] = Field(min_length=3, max_length=3)
     resume_feedback: str
+    
+class StatItem(BaseModel):
+    label: str
+    value: int
+    color: Optional[str] = None
+
+class CompanyAnalytics(BaseModel):
+    total_active_jobs: int
+    total_views: int
+    total_applications: int
+    hiring_funnel: List[StatItem]
+    applicant_skills: List[StatItem] 
+
+class StudentAnalytics(BaseModel):
+    total_applications: int
+    application_status: List[StatItem]
+    market_trends: List[StatItem]
