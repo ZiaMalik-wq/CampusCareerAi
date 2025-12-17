@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import check_db_connection
 from app.core.vector_db import vector_db 
-from app.api.routes import auth, jobs, chat, students, companies, applications
+from app.api.routes import auth, jobs, chat, students, companies, applications, analytics
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -38,10 +38,16 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error. Please contact support."},
     )
 
+origins = [
+    "http://localhost:5173",
+    "https://campuscareerai.me",
+    "https://www.campuscareerai.me"
+]
+
 # 5. Middleware (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,6 +60,7 @@ app.include_router(students.router, prefix="/students", tags=["Students"])
 app.include_router(chat.router, prefix="/chat", tags=["AI Chat"])
 app.include_router(companies.router, prefix="/companies", tags=["Companies"])
 app.include_router(applications.router, prefix="/applications", tags=["Applications"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 
 
 # 7. Root Endpoints
