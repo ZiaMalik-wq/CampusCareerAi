@@ -15,7 +15,7 @@ import {
   BarChart2
 } from 'lucide-react';
 
-const Analytics = () => {
+const AnalyticsPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -216,4 +216,4 @@ const ChartCard = ({ title, children }) => (
 // Colors for Pie Chart
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
-export default Analytics;
+export default AnalyticsPage;

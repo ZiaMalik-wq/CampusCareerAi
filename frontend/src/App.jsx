@@ -6,28 +6,27 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CreateJob from "./pages/CreateJob";
-import { Toaster } from "react-hot-toast";
 import Jobs from "./pages/Jobs";
 import JobDetails from "./pages/JobDetails";
 import MyJobs from "./pages/Myjobs";
 import EditJob from "./pages/EditJob";
 import Profile from "./pages/Profile";
-import RecommendedJobs from './pages/RecommendedJobs';
-import MyApplications from './pages/MyApplications';
-import JobApplicants from './pages/JobApplicants';
-import InterviewPrep from './pages/InterviewPrep';
-import Analytics from './pages/Analytics';
-import { Analytics } from "@vercel/analytics/react"
+import RecommendedJobs from "./pages/RecommendedJobs";
+import MyApplications from "./pages/MyApplications";
+import JobApplicants from "./pages/JobApplicants";
+import InterviewPrep from "./pages/InterviewPrep";
+import AnalyticsPage from "./pages/Analytics";
+import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
     <AuthProvider>
-      {" "}
-      {/* Wrap everything here */}
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Toaster position="top-center" reverseOrder={false} />
           <Navbar />
+
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -41,9 +40,15 @@ function App() {
             <Route path="/recommendations" element={<RecommendedJobs />} />
             <Route path="/my-applications" element={<MyApplications />} />
             <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
-            <Route path="/jobs/:id/interview-prep" element={<InterviewPrep />} />
-            <Route path="/analytics" element={<Analytics />} />
+            <Route
+              path="/jobs/:id/interview-prep"
+              element={<InterviewPrep />}
+            />
+            <Route path="/analytics" element={<AnalyticsPage />} />
           </Routes>
+
+          {/* Vercel Analytics */}
+          <Analytics />
         </div>
       </Router>
     </AuthProvider>
