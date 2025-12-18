@@ -17,7 +17,7 @@ import MyApplications from './pages/MyApplications';
 import JobApplicants from './pages/JobApplicants';
 import InterviewPrep from './pages/InterviewPrep';
 import Analytics from './pages/Analytics';
-
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
