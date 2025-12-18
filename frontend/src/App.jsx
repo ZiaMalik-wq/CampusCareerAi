@@ -15,7 +15,7 @@ import RecommendedJobs from "./pages/RecommendedJobs";
 import MyApplications from "./pages/MyApplications";
 import JobApplicants from "./pages/JobApplicants";
 import InterviewPrep from "./pages/InterviewPrep";
-import AnalyticsPage from "./pages/Analytics";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
 
