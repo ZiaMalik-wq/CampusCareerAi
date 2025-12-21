@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from sqlmodel import Session, select
 from app.db.session import get_session
 from app.core.config import settings
-from app.models.auth import User
+from app.models.auth import User, UserRole
 from typing import Optional
 
 
@@ -63,3 +63,16 @@ def get_optional_user(
     statement = select(User).where(User.email == email)
     user = session.exec(statement).first()
     return user
+
+def get_current_admin(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Dependency to ensure the user is a Super Admin.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=403, 
+            detail="The Admin Dashboard is restricted to superusers."
+        )
+    return current_user

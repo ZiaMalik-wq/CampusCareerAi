@@ -19,6 +19,21 @@ class UserPublic(BaseModel):
     email: str
     role: UserRole
     full_name: Optional[str] = None
+    
+# --- Admin Schemas ---
+class SystemStats(BaseModel):
+    total_users: int
+    total_students: int
+    total_companies: int
+    total_jobs: int
+    total_applications: int
+
+class UserAdminView(BaseModel):
+    id: int
+    email: str
+    role: UserRole
+    is_active: bool = True
+    created_at: datetime
 
 # Token Schema
 class Token(BaseModel):
