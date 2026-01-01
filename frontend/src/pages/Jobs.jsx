@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import api from "../services/api";
 import JobCard from "../components/JobCard";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Search,
   Sparkles,
@@ -8,368 +9,331 @@ import {
   Layers,
   X,
   SlidersHorizontal,
-  TrendingUp,
 } from "lucide-react";
+import axios from "axios";
+
+const JOBS_CACHE_TTL_MS = 60_000;
+const jobsCache = new Map();
+
+function getJobsCacheKey({ query, mode }) {
+  const token = localStorage.getItem("token") || "anon";
+  const q = (query || "").trim().toLowerCase();
+  return `${token}::${mode}::${q}`;
+}
+
+const JobSkeleton = () => (
+  <div
+    aria-hidden="true"
+    className="h-full min-h-[16rem] rounded-xl bg-gray-100 animate-pulse border border-gray-200"
+  />
+);
+
+const COLOR_VARIANTS = {
+  purple: "bg-purple-600 text-white border-purple-600",
+  blue: "bg-blue-600 text-white border-blue-600",
+  green: "bg-green-600 text-white border-green-600",
+  white: "bg-white text-gray-700 border-gray-200 hover:bg-gray-50",
+};
+
+const SEARCH_MODES = {
+  hybrid: {
+    icon: Layers,
+    label: "Hybrid Search",
+    description: "AI understanding + exact keyword matching",
+    badge: "Recommended",
+    color: "purple",
+  },
+  semantic: {
+    icon: Sparkles,
+    label: "AI Semantic",
+    description: "Natural language understanding",
+    badge: "Smart",
+    color: "blue",
+  },
+  sql: {
+    icon: Database,
+    label: "Keyword Match",
+    description: "Exact text matching",
+    badge: "Classic",
+    color: "green",
+  },
+};
 
 const Jobs = () => {
+  const reduceMotion = useReducedMotion();
+  const abortRef = useRef(null);
+
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Search States
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState("hybrid");
-  const [isSearching, setIsSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showModeInfo, setShowModeInfo] = useState(false);
 
-  const fetchJobs = async (queryOverride = null, modeOverride = null) => {
-    setLoading(true);
+  const fetchJobs = useCallback(async (query, mode, isInitial = false) => {
+    const cacheKey = getJobsCacheKey({ query, mode });
+    const cached = jobsCache.get(cacheKey);
+    const now = Date.now();
+    const cacheIsValid =
+      cached &&
+      now - cached.fetchedAt < JOBS_CACHE_TTL_MS &&
+      Array.isArray(cached.jobs);
+
+    if (cacheIsValid) {
+      setJobs(cached.jobs);
+      setError(null);
+      setInitialLoading(false);
+      setSearchLoading(false);
+      return;
+    }
+
+    // Cancel previous request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    if (isInitial) setInitialLoading(true);
+    else setSearchLoading(true);
+
     setError(null);
-
-    const queryToUse = queryOverride !== null ? queryOverride : searchQuery;
-    const modeToUse = modeOverride !== null ? modeOverride : searchMode;
 
     try {
       let endpoint = "/jobs/";
       let params = {};
 
-      if (queryToUse.trim()) {
-        params = { q: queryToUse };
-
-        if (modeToUse === "semantic") {
-          endpoint = "/jobs/semantic";
-        } else if (modeToUse === "sql") {
-          endpoint = "/jobs/search";
-        } else {
-          endpoint = "/jobs/hybrid";
-        }
+      if (query && query.trim()) {
+        params.q = query;
+        endpoint =
+          mode === "semantic"
+            ? "/jobs/semantic"
+            : mode === "sql"
+            ? "/jobs/search"
+            : "/jobs/hybrid";
       }
 
-      const response = await api.get(endpoint, { params });
-      setJobs(response.data);
-      setIsSearching(!!queryToUse.trim());
-    } catch (err) {
-      console.error("Error fetching jobs:", err);
-      setError("Failed to load jobs. The server might be busy or offline.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const res = await api.get(endpoint, {
+        params,
+        signal: controller.signal,
+      });
 
-  useEffect(() => {
-    fetchJobs();
+      const nextJobs = Array.isArray(res.data) ? res.data : [];
+      setJobs(nextJobs);
+      jobsCache.set(cacheKey, { fetchedAt: Date.now(), jobs: nextJobs });
+    } catch (err) {
+      if (axios.isCancel(err) || err.code === "ERR_CANCELED") {
+        console.log("Request canceled");
+      } else {
+        console.error("Fetch error:", err);
+        setError("Failed to load jobs. Please check your connection.");
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setInitialLoading(false);
+        setSearchLoading(false);
+      }
+    }
   }, []);
+
+  // Initial Load
+  useEffect(() => {
+    fetchJobs("", "hybrid", true);
+    return () => abortRef.current?.abort();
+  }, [fetchJobs]);
+
+  // When Mode changes, re-search with CURRENT query
+  useEffect(() => {
+    if (!initialLoading) {
+      fetchJobs(searchQuery, searchMode, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchMode]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchJobs();
+    fetchJobs(searchQuery, searchMode, false);
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
-    fetchJobs("");
+    fetchJobs("", searchMode, false);
   };
 
-  const handleModeChange = (newMode) => {
-    setSearchMode(newMode);
-    if (searchQuery.trim()) {
-      fetchJobs(null, newMode);
-    }
+  const itemAnim = {
+    hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
+    visible: { opacity: 1, y: 0 },
   };
-
-  const getModeInfo = (mode) => {
-    const modes = {
-      hybrid: {
-        icon: Layers,
-        label: "Hybrid Search",
-        description: "Best of both worlds—AI understanding + exact matching",
-        badge: "Recommended",
-        activeClasses:
-          "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30",
-        bgClass: "bg-purple-50",
-        borderClass: "border-purple-100",
-        iconBgClass: "bg-purple-100",
-        iconColorClass: "text-purple-600",
-        textColorClass: "text-purple-900",
-        badgeBgClass: "bg-purple-200",
-        badgeTextClass: "text-purple-700",
-        descColorClass: "text-purple-700",
-      },
-      semantic: {
-        icon: Sparkles,
-        label: "AI Semantic",
-        description:
-          "Natural language search that understands context and meaning",
-        badge: "Smart",
-        activeClasses:
-          "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30",
-        bgClass: "bg-blue-50",
-        borderClass: "border-blue-100",
-        iconBgClass: "bg-blue-100",
-        iconColorClass: "text-blue-600",
-        textColorClass: "text-blue-900",
-        badgeBgClass: "bg-blue-200",
-        badgeTextClass: "text-blue-700",
-        descColorClass: "text-blue-700",
-      },
-      sql: {
-        icon: Database,
-        label: "Keyword Match",
-        description: "Fast, precise text matching for specific terms",
-        badge: "Classic",
-        activeClasses:
-          "bg-green-600 border-green-600 text-white shadow-lg shadow-green-500/30",
-        bgClass: "bg-green-50",
-        borderClass: "border-green-100",
-        iconBgClass: "bg-green-100",
-        iconColorClass: "text-green-600",
-        textColorClass: "text-green-900",
-        badgeBgClass: "bg-green-200",
-        badgeTextClass: "text-green-700",
-        descColorClass: "text-green-700",
-      },
-    };
-    return modes[mode];
-  };
-
-  const currentMode = getModeInfo(searchMode);
-  const ModeIcon = currentMode.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
-      <div className="container mx-auto max-w-7xl">
-        {/* HEADER */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-              <Search className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">
-                Discover Opportunities
-              </h1>
-              <p className="text-gray-500 text-sm mt-1">
-                Powered by intelligent search • {jobs.length} positions
-                available
-              </p>
-            </div>
-          </div>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900">
+            Discover Opportunities
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {jobs.length} positions available
+          </p>
+        </header>
 
-        {/* SEARCH SECTION */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 mb-8">
-          <form onSubmit={handleSearchSubmit} className="space-y-4">
-            <div className="flex flex-col lg:flex-row gap-3">
-              <div className="flex-grow relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 transition group-focus-within:text-blue-600" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={
-                    searchMode === "semantic"
-                      ? "Try: 'remote data analyst role in fintech'"
-                      : "Search by job title, skills, company, location..."
-                  }
-                  className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition text-gray-700 placeholder:text-gray-400"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex gap-2 lg:min-w-[420px]">
-                {["hybrid", "semantic", "sql"].map((mode) => {
-                  const info = getModeInfo(mode);
-                  const Icon = info.icon;
-                  const isActive = searchMode === mode;
-
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => handleModeChange(mode)}
-                      className={`flex-1 px-4 py-4 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border-2 ${
-                        isActive
-                          ? info.activeClasses
-                          : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:shadow-md"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="hidden sm:inline">
-                        {info.label.split(" ")[0]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
+        {/* Search Form */}
+        <form
+          onSubmit={handleSearchSubmit}
+          className="bg-white rounded-3xl shadow-xl border p-6 mb-8 space-y-4"
+        >
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              id="job-search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-12 py-4 border-2 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="Search jobs, skills, companies..."
+            />
+            {searchQuery && (
               <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 lg:min-w-[140px]"
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100"
               >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    <span>Searching</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-5 h-5" />
-                    <span>Search</span>
-                  </>
-                )}
+                <X className="w-5 h-5 text-gray-500" />
               </button>
-            </div>
+            )}
+          </div>
 
-            <div
-              className={`flex items-start gap-3 p-4 rounded-2xl ${currentMode.bgClass} border ${currentMode.borderClass}`}
-            >
-              <div
-                className={`p-2 ${currentMode.iconBgClass} rounded-lg mt-0.5`}
+          {/* Search Modes */}
+          <div role="radiogroup" className="flex flex-wrap gap-2">
+            {Object.entries(SEARCH_MODES).map(([key, m]) => {
+              const Icon = m.icon;
+              const active = searchMode === key;
+              const btnClass = active
+                ? COLOR_VARIANTS[m.color]
+                : COLOR_VARIANTS["white"];
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSearchMode(key)}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 font-semibold transition-all duration-200 ${btnClass} flex items-center justify-center gap-2`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Mode Info */}
+          <AnimatePresence>
+            {showModeInfo && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 overflow-hidden"
               >
-                <ModeIcon className={`w-4 h-4 ${currentMode.iconColorClass}`} />
-              </div>
-              <div className="flex-grow">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`font-semibold ${currentMode.textColorClass}`}
-                  >
-                    {currentMode.label}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${currentMode.badgeBgClass} ${currentMode.badgeTextClass} font-medium`}
-                  >
-                    {currentMode.badge}
-                  </span>
-                </div>
-                <p className={`text-sm ${currentMode.descColorClass}`}>
-                  {currentMode.description}
-                </p>
-              </div>
-            </div>
-          </form>
+                <span className="font-semibold text-gray-900">Info: </span>
+                {SEARCH_MODES[searchMode].description}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {!searchQuery && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-500">
-                  Popular Searches
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "Remote React Developer",
-                  "Data Analyst NYC",
-                  "Marketing Intern",
-                  "Full Stack Engineer",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery(suggestion);
-                      fetchJobs(suggestion);
-                    }}
-                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full text-sm text-gray-700 font-medium transition hover:shadow-sm"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="flex justify-between items-center pt-2">
+            <button
+              type="button"
+              onClick={() => setShowFilters((s) => !s)}
+              className="flex items-center gap-2 text-gray-600 font-medium hover:text-gray-900"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowModeInfo((s) => !s)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              {showModeInfo ? "Hide info" : "Show info"}
+            </button>
+          </div>
+
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border rounded-xl p-4 text-sm text-gray-500 bg-gray-50"
+            >
+              Filters coming soon (location, remote, salary)
+            </motion.div>
           )}
-        </div>
 
-        {/* RESULTS SECTION */}
-        {loading ? (
-          <div className="flex flex-col justify-center items-center py-20">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-blue-600 animate-pulse" />
-              </div>
-            </div>
-            <p className="text-gray-500 mt-6 animate-pulse font-medium">
-              {searchMode === "semantic"
-                ? "AI is analyzing your query..."
-                : "Searching opportunities..."}
-            </p>
+          <button
+            type="submit"
+            disabled={searchLoading}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-[1.01] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {searchLoading ? "Searching..." : "Search Jobs"}
+          </button>
+        </form>
+
+        {/* Results Section */}
+        {initialLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <JobSkeleton key={i} />
+            ))}
           </div>
         ) : error ? (
-          <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="bg-red-100 p-4 rounded-full mb-4">
               <X className="w-8 h-8 text-red-600" />
             </div>
-            <h3 className="text-xl font-bold text-red-900 mb-2">
-              Oops! Something went wrong
-            </h3>
-            <p className="text-red-700">{error}</p>
+            <h3 className="text-lg font-bold text-gray-900">{error}</h3>
             <button
-              onClick={() => fetchJobs()}
-              className="mt-6 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition"
+              onClick={handleSearchSubmit}
+              className="mt-4 text-blue-600 hover:underline"
             >
               Try Again
             </button>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Search className="w-10 h-10 text-gray-400" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              No matches found
-            </h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              {isSearching
-                ? "Try adjusting your search terms."
-                : "No jobs are currently available."}
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900">No jobs found</h3>
+            <p className="text-gray-500 mt-2">
+              Try adjusting your search terms or filters.
             </p>
-            {isSearching && (
-              <button
-                onClick={handleClearSearch}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition"
-              >
-                Clear Search & View All Jobs
-              </button>
-            )}
           </div>
         ) : (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {isSearching ? "Search Results" : "All Opportunities"}
-                </h2>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                  {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="px-4 py-2 border-2 border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition flex items-center gap-2"
+          <motion.div
+            key={`${searchMode}-${searchQuery}-${jobs.length}`}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.05 } },
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {jobs.map((job) => (
+              <motion.div
+                key={job.id}
+                variants={itemAnim}
+                className="h-full flex flex-col"
               >
-                <SlidersHorizontal className="w-4 h-4" />
-                Filters
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
-            </div>
-          </div>
+                <JobCard job={job} />
+              </motion.div>
+            ))}
+          </motion.div>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

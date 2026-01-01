@@ -13,32 +13,71 @@ import {
   Edit3,
   Trash2,
   Search,
-  ArrowUpRight,
-  BarChart2,
-  Clock,
+  Clock, // Required for the status badge
+  BarChart2, // For analytics button
 } from "lucide-react";
+
+const MY_JOBS_CACHE_TTL_MS = 60_000;
+let myJobsCache = {
+  userKey: null,
+  fetchedAt: 0,
+  jobs: null,
+};
 
 const MyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = useState(null);
 
+  const userKey = user?.id || user?.email || "anonymous";
+
   useEffect(() => {
+    if (!user) {
+      setLoading(true);
+      return;
+    }
+
     // Security Check
-    if (user && user.role !== "company" && user.role !== "COMPANY") {
+    if (user.role !== "company" && user.role !== "COMPANY") {
       navigate("/");
       return;
     }
 
+    const now = Date.now();
+    const cacheIsValid =
+      myJobsCache.jobs &&
+      myJobsCache.userKey === userKey &&
+      now - myJobsCache.fetchedAt < MY_JOBS_CACHE_TTL_MS;
+
+    if (cacheIsValid) {
+      setJobs(myJobsCache.jobs);
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setLoading(true);
+
     const fetchMyJobs = async () => {
       try {
-        const response = await api.get("/jobs/my-jobs");
-        setJobs(response.data);
+        const response = await api.get("/jobs/my-jobs", {
+          signal: controller.signal,
+        });
+        const nextJobs = response.data || [];
+        setJobs(nextJobs);
+        myJobsCache = {
+          userKey,
+          fetchedAt: Date.now(),
+          jobs: nextJobs,
+        };
       } catch (err) {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") {
+          return;
+        }
         console.error("Error fetching my jobs:", err);
       } finally {
         setLoading(false);
@@ -46,7 +85,11 @@ const MyJobs = () => {
     };
 
     fetchMyJobs();
-  }, [user, navigate]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [user, userKey, navigate]);
 
   const handleToggleStatus = async (jobId, currentStatus) => {
     const loadingToast = toast.loading(
@@ -61,9 +104,17 @@ const MyJobs = () => {
       });
 
       setJobs((prevJobs) =>
-        prevJobs.map((job) =>
-          job.id === jobId ? { ...job, is_active: !currentStatus } : job
-        )
+        prevJobs.map((job) => {
+          if (job.id !== jobId) return job;
+          const updated = { ...job, is_active: !currentStatus };
+          if (myJobsCache.jobs) {
+            myJobsCache = {
+              ...myJobsCache,
+              jobs: myJobsCache.jobs.map((j) => (j.id === jobId ? updated : j)),
+            };
+          }
+          return updated;
+        })
       );
 
       toast.success(
@@ -99,6 +150,12 @@ const MyJobs = () => {
     try {
       await api.delete(`/jobs/${jobId}`);
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+      if (myJobsCache.jobs) {
+        myJobsCache = {
+          ...myJobsCache,
+          jobs: myJobsCache.jobs.filter((job) => job.id !== jobId),
+        };
+      }
       toast.dismiss(loadingToastId);
       toast.success("Job deleted successfully!", { duration: 3000 });
     } catch (err) {
@@ -113,6 +170,7 @@ const MyJobs = () => {
     }
   };
 
+  // Action handlers
   const handleViewApplicants = (jobId) => {
     navigate(`/jobs/${jobId}/applicants`);
   };
@@ -124,15 +182,10 @@ const MyJobs = () => {
     0
   );
   const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0);
-
-  // Calculate recent applications (last 7 days)
-  const recentApplications = jobs.reduce((sum, job) => {
-    if (!job.created_at) return sum;
-    const jobDate = new Date(job.created_at);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return jobDate >= weekAgo ? sum + (job.applications_count || 0) : sum;
-  }, 0);
+  const recentApplications = jobs.reduce(
+    (sum, job) => sum + (job.recent_applications_count || 0),
+    0
+  );
 
   // Filter jobs
   const filteredJobs = jobs.filter((job) => {
@@ -150,7 +203,8 @@ const MyJobs = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+      {/* Toast Notifications */}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -168,7 +222,7 @@ const MyJobs = () => {
         }}
       />
 
-      <div className="container mx-auto max-w-7xl">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
@@ -188,16 +242,15 @@ const MyJobs = () => {
 
             <button
               onClick={() => navigate("/post-job")}
-              className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold"
+              className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold"
             >
               <PlusCircle className="w-5 h-5" />
               Post New Job
             </button>
           </div>
 
-          {/* Quick Stats Section with Analytics Link */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 shadow-xl mb-8 relative overflow-hidden">
-            {/* Background Pattern */}
+          {/* Quick Stats Section */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 shadow-xl mb-8 relative overflow-hidden">
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
@@ -215,20 +268,18 @@ const MyJobs = () => {
                 </div>
                 <button
                   onClick={() => navigate("/analytics")}
-                  className="flex items-center gap-2 px-5 py-3 bg-white text-blue-600 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all duration-200 group"
+                  className="flex items-center gap-2 px-5 py-3 bg-white/20 border border-white/30 rounded-xl hover:bg-white/30 transition text-sm font-semibold"
                 >
                   <BarChart2 className="w-5 h-5" />
                   <span>View Full Analytics</span>
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Active Jobs */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <Briefcase className="w-5 h-5 text-white" />
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <Briefcase className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
                       Active Jobs
@@ -239,16 +290,15 @@ const MyJobs = () => {
                       {activeJobs}
                     </div>
                     <div className="text-sm text-white/70">
-                      of {jobs.length}
+                      of {jobs.length} total
                     </div>
                   </div>
                 </div>
 
-                {/* Total Applications */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <Users className="w-5 h-5 text-white" />
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <Users className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
                       Applications
@@ -262,23 +312,26 @@ const MyJobs = () => {
                   </div>
                 </div>
 
-                {/* Total Views */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <Eye className="w-5 h-5 text-white" />
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <Eye className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
                       Total Views
                     </span>
                   </div>
-                  <div className="text-4xl font-bold text-white">
-                    {totalViews}
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-4xl font-bold text-white">
+                        {totalViews}
+                      </div>
+                      <div className="text-sm text-white/70">impressions</div>
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <div className="text-sm text-white/70 mt-1">impressions</div>
                 </div>
 
-                {/* Recent Activity */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-white/20 rounded-lg">
@@ -301,7 +354,7 @@ const MyJobs = () => {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-gray-100 p-5 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-grow relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -310,11 +363,11 @@ const MyJobs = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search your job postings..."
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition bg-white"
               />
             </div>
 
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
               {["all", "active", "inactive"].map((status) => (
                 <button
                   key={status}
@@ -335,12 +388,7 @@ const MyJobs = () => {
         {/* Jobs List */}
         {loading ? (
           <div className="flex flex-col justify-center items-center py-20">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-blue-600 animate-pulse" />
-              </div>
-            </div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600"></div>
             <p className="text-gray-500 mt-6 animate-pulse font-medium">
               Loading your jobs...
             </p>
@@ -378,73 +426,76 @@ const MyJobs = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {filteredJobs.map((job) => (
-                <div key={job.id} className="relative group h-full">
-                  <div className="h-full flex flex-col relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow bg-white">
-                    <JobCard job={job} isActive={job.is_active}>
-                      {/* Control Panel Buttons */}
-                      <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 mt-2">
-                        {/* 1. View Applicants */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewApplicants(job.id);
-                          }}
-                          className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg transition text-sm"
-                        >
-                          <Users className="w-4 h-4" />
-                          View Applicants ({job.applications_count || 0})
-                        </button>
+                // Added h-full to ensure card takes full height of grid row
+                <div key={job.id} className="h-full">
+                  <JobCard job={job} isActive={job.is_active}>
+                    {/* Custom footer content for Company Dashboard */}
+                    <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 mt-2">
+                      {/* 1. View Applicants (Primary Action) */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          handleViewApplicants(job.id);
+                        }}
+                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg transition text-sm"
+                      >
+                        <Users className="w-4 h-4" />
+                        View Applicants ({job.applications_count || 0})
+                      </button>
 
-                        {/* 2. Edit */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/jobs/${job.id}/edit`);
-                          }}
-                          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          Edit
-                        </button>
+                      {/* 2. Edit Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/jobs/${job.id}/edit`);
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit
+                      </button>
 
-                        {/* 3. Pause/Activate */}
-                        <button
-                          onClick={() =>
-                            handleToggleStatus(job.id, job.is_active)
-                          }
-                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition text-sm border ${
-                            job.is_active
-                              ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
-                              : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                          }`}
-                        >
-                          {job.is_active ? "Pause" : "Activate"}
-                        </button>
+                      {/* 3. Pause/Activate Toggle */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStatus(job.id, job.is_active);
+                        }}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition text-sm font-medium border ${
+                          job.is_active
+                            ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                            : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                        }`}
+                      >
+                        {job.is_active ? "Pause" : "Activate"}
+                      </button>
 
-                        {/* 4. Delete */}
-                        <button
-                          onClick={() => handleDelete(job.id)}
-                          disabled={deletingId === job.id}
-                          className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition text-sm font-medium mt-1"
-                        >
-                          {deletingId === job.id ? (
-                            "Deleting..."
-                          ) : (
-                            <>
-                              <Trash2 className="w-4 h-4" /> Delete Job
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </JobCard>
-                  </div>
+                      {/* 4. Delete Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(job.id);
+                        }}
+                        disabled={deletingId === job.id}
+                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition text-sm font-medium mt-1"
+                      >
+                        {deletingId === job.id ? (
+                          "Deleting..."
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" /> Delete Job
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </JobCard>
                 </div>
               ))}
             </div>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

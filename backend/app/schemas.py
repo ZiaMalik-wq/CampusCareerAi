@@ -10,7 +10,7 @@ from typing import List, Optional, Literal
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    role: UserRole = UserRole.STUDENT  # Default to student
+    role: UserRole = UserRole.STUDENT
     full_name: str
 
 # 2. Schema for User Response (What we send back - NO PASSWORD!)

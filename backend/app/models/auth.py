@@ -2,12 +2,13 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import ForeignKey
 
 # 1. Define Roles
 class UserRole(str, Enum):
-    STUDENT = "student"
-    COMPANY = "company"
-    ADMIN = "admin"
+    STUDENT = "STUDENT"
+    COMPANY = "COMPANY"
+    ADMIN = "ADMIN"
 
 # 2. USERS Table
 class User(SQLModel, table=True):
@@ -29,28 +30,34 @@ class Student(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     
-    # Foreign Key linking to User
-    user_id: int = Field(foreign_key="users.id")
+    # Foreign Key linking to User with CASCADE DELETE
+    # This ensures if User is deleted, the Student profile is also deleted
+    user_id: int = Field(sa_column_args=[ForeignKey("users.id", ondelete="CASCADE")])
+    
     university: Optional[str] = None
     city: Optional[str] = None
     resume_url: Optional[str] = None
     full_name: str
     cgpa: Optional[float] = None
     skills: Optional[str] = None
-    resume_text: Optional[str] = None  # For AI analysis later
+    resume_text: Optional[str] = None
     
     # Relationship
     user: Optional[User] = Relationship(back_populates="student_profile")
 
+# 4. COMPANIES Table
 class Company(SQLModel, table=True):
     __tablename__ = "companies"
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id")
+    
+    # Foreign Key linking to User with CASCADE DELETE
+    user_id: int = Field(sa_column_args=[ForeignKey("users.id", ondelete="CASCADE")])
+    
     company_name: str
     location: Optional[str] = None
     website: Optional[str] = None
     
-    # Existing relationship
+    # Relationships
     user: Optional[User] = Relationship(back_populates="company_profile")
     jobs: List["Job"] = Relationship(back_populates="company")

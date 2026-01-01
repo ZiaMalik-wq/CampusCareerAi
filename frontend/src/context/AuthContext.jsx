@@ -1,14 +1,15 @@
 import React, { createContext, useState, useEffect } from "react";
 import api from "../services/api";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  // Start loading as true to prevent flash of content
+
+  // Auth bootstrap loading (NOT form loading)
   const [loading, setLoading] = useState(true);
 
-  // Helper function to fetch user details from Backend
   const fetchCurrentUser = async (token) => {
     try {
       const response = await api.get("/auth/me", {
@@ -17,15 +18,14 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      // Success: Set the full user object
       setUser(response.data);
+      return response.data;
     } catch (error) {
       console.error("Token invalid or expired", error);
-      // If token is bad, clear it out
       localStorage.removeItem("token");
       setUser(null);
+      throw error;
     } finally {
-      // STOP LOADING irrespective of success or failure
       setLoading(false);
     }
   };
@@ -33,9 +33,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetchCurrentUser(token);
+      fetchCurrentUser(token).catch(() => {});
     } else {
-      // If no token exists, we aren't loading anymore
       setLoading(false);
     }
   }, []);
@@ -55,11 +54,11 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem("token", access_token);
 
-      await fetchCurrentUser(access_token);
-      return true;
+      const userData = await fetchCurrentUser(access_token);
+      return userData; //explicit success signal
     } catch (error) {
       console.error("Login failed", error);
-      throw error;
+      throw error; // UI can reliably catch
     }
   };
 
@@ -69,7 +68,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    // Pass 'loading' to the rest of the app
     <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>

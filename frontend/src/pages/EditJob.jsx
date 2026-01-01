@@ -1,28 +1,53 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import toast from 'react-hot-toast';
-import { AuthContext } from '../context/AuthContext';
-import { Calendar } from 'lucide-react'; // Added Icon
+import React, { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../services/api";
+import toast from "react-hot-toast";
+import { AuthContext } from "../context/AuthContext";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  Calendar,
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Users,
+  Clock,
+} from "lucide-react";
 
 const EditJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  useContext(AuthContext);
+
+  const reduceMotion = useReducedMotion();
+  const fadeUp = {
+    hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: reduceMotion ? 0 : 0.35, ease: "easeOut" },
+    },
+  };
+  const stagger = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: reduceMotion ? 0 : 0.06 },
+    },
+  };
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // 1. Updated State to include deadline
   const [jobData, setJobData] = useState({
-    title: '',
-    description: '',
-    location: '',
-    salary_range: '',
-    job_type: 'Full-time',
+    title: "",
+    description: "",
+    location: "",
+    salary_range: "",
+    job_type: "Full-time",
     max_seats: 1,
     is_active: true,
-    deadline: '' 
+    deadline: "",
   });
 
   // 2. Fetch Existing Data
@@ -31,11 +56,11 @@ const EditJob = () => {
       try {
         const response = await api.get(`/jobs/${id}`);
         const data = response.data;
-        
+
         // Helper: The datetime-local input needs format "YYYY-MM-DDTHH:mm"
         // Backend usually returns "2025-12-01T12:00:00" (with seconds)
         // We slice the string to remove seconds for the input to recognize it
-        let formattedDeadline = '';
+        let formattedDeadline = "";
         if (data.deadline) {
           formattedDeadline = data.deadline.slice(0, 16);
         }
@@ -44,17 +69,16 @@ const EditJob = () => {
           title: data.title,
           description: data.description,
           location: data.location,
-          salary_range: data.salary_range || '',
+          salary_range: data.salary_range || "",
           job_type: data.job_type,
           max_seats: data.max_seats || 1,
           is_active: data.is_active,
-          deadline: formattedDeadline
+          deadline: formattedDeadline,
         });
-
       } catch (err) {
-        console.error('Error fetching job:', err);
-        toast.error('Could not load job details.');
-        navigate('/my-jobs');
+        console.error("Error fetching job:", err);
+        toast.error("Could not load job details.");
+        navigate("/my-jobs");
       } finally {
         setLoading(false);
       }
@@ -64,7 +88,8 @@ const EditJob = () => {
   }, [id, navigate]);
 
   const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setJobData({ ...jobData, [e.target.name]: value });
   };
 
@@ -81,171 +106,222 @@ const EditJob = () => {
       }
 
       await api.put(`/jobs/${id}`, payload);
-      
-      toast.success('Job updated successfully!');
-      
+
+      toast.success("Job updated successfully!");
+
       setTimeout(() => {
         navigate(`/jobs/${id}`);
       }, 1000);
-
     } catch (error) {
-      console.error('Update Error:', error);
-      const errorMsg = error.response?.data?.detail || 'Failed to update job.';
+      console.error("Update Error:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to update job.";
       toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-[80vh]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
+  if (loading)
+    return (
+      <motion.div
+        className="flex justify-center items-center min-h-[60vh]"
+        initial="hidden"
+        animate="visible"
+        variants={fadeUp}
+      >
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </motion.div>
+    );
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-10">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Edit Job: {jobData.title}</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Job Title */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Job Title</label>
-            <input 
-              type="text" 
-              name="title"
-              value={jobData.title}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+    <motion.main
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4"
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+    >
+      <div className="max-w-4xl mx-auto">
+        <motion.header variants={fadeUp} className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
+            <Briefcase className="w-7 h-7 text-white" />
           </div>
+          <h1 className="text-4xl font-bold text-gray-900">Edit Job</h1>
+          <p className="text-gray-600 mt-2">
+            Update details to keep your listing accurate
+          </p>
+        </motion.header>
 
-          {/* Job Type & Salary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Job Type</label>
-              <select 
-                name="job_type"
-                value={jobData.job_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Internship">Internship</option>
-                <option value="Contract">Contract</option>
-              </select>
+        <motion.div
+          variants={fadeUp}
+          className="bg-white/80 backdrop-blur rounded-3xl shadow-xl border p-5 md:p-6"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 mb-5 border-b border-gray-100">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-gray-900 truncate">
+                {jobData.title || "Untitled job"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Edit the fields below and save
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Salary Range</label>
-              <input 
-                type="text" 
-                name="salary_range"
-                value={jobData.salary_range}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Location & Seats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
-              <input 
-                type="text" 
-                name="location"
-                value={jobData.location}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Max Seats</label>
-              <input 
-                type="number" 
-                name="max_seats"
-                value={jobData.max_seats}
-                onChange={handleChange}
-                min="1"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Deadline & Active Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-             {/* Deadline Field */}
-             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-pink-600" />
-                  Deadline
-                </label>
-                <input 
-                  type="datetime-local" 
-                  name="deadline"
-                  value={jobData.deadline}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
-                />
-             </div>
-
-             {/* Active Status Toggle */}
-             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 h-fit mb-0.5">
-               <input 
+            <div className="flex items-center gap-3 justify-start sm:justify-end">
+              <label className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200">
+                <input
                   type="checkbox"
                   name="is_active"
                   checked={jobData.is_active}
                   onChange={handleChange}
-                  id="is_active"
                   className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-               />
-               <label htmlFor="is_active" className="text-gray-700 font-medium cursor-pointer">
-                 Job is Active (Visible)
-               </label>
+                />
+                <span className="text-gray-700 font-medium">Active</span>
+              </label>
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Job Description</label>
-            <textarea 
-              name="description"
-              value={jobData.description}
-              onChange={handleChange}
-              required
-              rows="6"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-            ></textarea>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Job Title */}
+            <div>
+              <label className="label">
+                <Briefcase className="w-4 h-4 text-blue-600" />
+                Job Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={jobData.title}
+                onChange={handleChange}
+                required
+                className="input px-3 py-2.5"
+              />
+            </div>
 
-          {/* Actions */}
-          <div className="flex gap-4">
-             <button 
+            {/* Job Type & Salary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  Job Type
+                </label>
+                <select
+                  name="job_type"
+                  value={jobData.job_type}
+                  onChange={handleChange}
+                  className="input px-3 py-2.5"
+                >
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Contract">Contract</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="label">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  Salary Range
+                </label>
+                <input
+                  type="text"
+                  name="salary_range"
+                  value={jobData.salary_range}
+                  onChange={handleChange}
+                  className="input px-3 py-2.5"
+                />
+              </div>
+            </div>
+
+            {/* Location & Seats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={jobData.location}
+                  onChange={handleChange}
+                  required
+                  className="input px-3 py-2.5"
+                />
+              </div>
+
+              <div>
+                <label className="label">
+                  <Users className="w-4 h-4 text-orange-600" />
+                  Open Positions
+                </label>
+                <input
+                  type="number"
+                  name="max_seats"
+                  value={jobData.max_seats}
+                  onChange={handleChange}
+                  min="1"
+                  className="input px-3 py-2.5"
+                />
+              </div>
+            </div>
+
+            {/* Deadline & Active Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              {/* Deadline Field */}
+              <div>
+                <label className="label">
+                  <Calendar className="w-4 h-4 text-pink-600" />
+                  Application Deadline
+                </label>
+                <input
+                  type="datetime-local"
+                  name="deadline"
+                  value={jobData.deadline}
+                  onChange={handleChange}
+                  className="input px-3 py-2.5 text-gray-700"
+                />
+              </div>
+
+              <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                Toggle “Active” to hide/show this job listing.
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="label">Job Description</label>
+              <textarea
+                name="description"
+                value={jobData.description}
+                onChange={handleChange}
+                required
+                rows={5}
+                className="input px-3 py-2.5 resize-none"
+              ></textarea>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+              <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="w-1/3 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition"
-             >
-               Cancel
-             </button>
-             <button 
+                className="btn-secondary py-2.5"
+              >
+                Cancel
+              </button>
+              <button
                 type="submit"
                 disabled={saving}
-                className={`w-2/3 text-white py-3 rounded-lg transition font-bold text-lg ${saving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-             >
-                {saving ? 'Saving...' : 'Save Changes'}
-             </button>
-          </div>
-          
-        </form>
+                className={`btn-primary ${
+                  saving ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       </div>
-    </div>
+    </motion.main>
   );
 };
 

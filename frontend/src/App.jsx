@@ -16,9 +16,9 @@ import MyApplications from "./pages/MyApplications";
 import JobApplicants from "./pages/JobApplicants";
 import InterviewPrep from "./pages/InterviewPrep";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 function App() {
   return (
@@ -46,11 +46,11 @@ function App() {
               element={<InterviewPrep />}
             />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
 
           {/* Vercel Analytics */}
           <Analytics />
-          <SpeedInsights />
         </div>
       </Router>
     </AuthProvider>

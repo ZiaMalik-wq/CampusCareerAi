@@ -1,7 +1,8 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
-import toast, { Toaster } from "react-hot-toast";
 import {
   Eye,
   EyeOff,
@@ -10,218 +11,154 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  CheckCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
+
+      // 🔒 Defensive check (covers FastAPI edge cases)
+      if (!result) {
+        throw new Error("Invalid email or password");
+      }
+
       toast.success("Welcome back!", {
-        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-        duration: 2000,
-        style: {
-          fontWeight: "500",
-        },
+        icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+        duration: 1500,
       });
 
-      navigate("/");
-    } catch (error) {
-      console.error("Full Login Error Object:", error);
-
-      // Robust error handling
-      if (error.response && error.response.data) {
-        // FastAPI usually sends 'detail', sometimes it is a string, sometimes an array
-        const detail = error.response.data.detail;
-        const errorMsg =
-          typeof detail === "string" ? detail : "Invalid credentials"; // Fallback if detail is complex object
-
-        toast.error(errorMsg, {
+      // Let the toast breathe before redirect
+      setTimeout(() => {
+        navigate("/");
+      }, 600);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Invalid email or password",
+        {
           icon: <AlertCircle className="w-5 h-5 text-red-600" />,
-        });
-      } else if (error.request) {
-        toast.error("No response from server. Is backend running?");
-      } else {
-        toast.error("An unexpected error occurred.");
-      }
+          duration: 3000,
+        }
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center py-12 px-4">
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 -right-40 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div
-          className="absolute bottom-20 -left-40 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-      </div>
+  const fadeUp = {
+    hidden: { opacity: 0, y: 12 },
+    visible: { opacity: 1, y: 0 },
+  };
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center px-4 py-12">
       <div className="relative w-full max-w-md">
-        {/* Card Header with Logo/Badge */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30 mb-4">
+        {/* Header */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+          transition={{ duration: 0.4 }}
+          className="text-center mb-8"
+        >
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600">Sign in to continue your journey</p>
-        </div>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="text-gray-600 mt-1">Sign in to your account</p>
+        </motion.div>
 
-        {/* Main Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100 p-8">
+        {/* Card */}
+        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-2xl border p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input */}
+            {/* Email */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700">
                 Email Address
               </label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 transition group-focus-within:text-blue-600" />
+              <div className="relative mt-1">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="email"
                   name="email"
+                  type="email"
+                  required
                   value={formData.email}
                   onChange={handleChange}
-                  required
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
                   placeholder="student@university.edu"
+                  className="w-full pl-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* Password Input */}
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition"
-                >
-                  Forgot?
-                </Link>
-              </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 transition group-focus-within:text-blue-600" />
+              <label className="block text-sm font-semibold text-gray-700">
+                Password
+              </label>
+              <div className="relative mt-1">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type={showPassword ? "text" : "password"}
                   name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
                   value={formData.password}
                   onChange={handleChange}
-                  required
-                  className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
-                  placeholder="••••••••"
+                  className="w-full pl-12 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="remember-me"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 text-sm text-gray-600 cursor-pointer"
-              >
-                Keep me signed in
-              </label>
-            </div>
-
-            {/* Submit Button */}
-            <button
+            {/* Submit */}
+            <motion.button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              whileHover={!loading ? { scale: 1.03 } : {}}
+              whileTap={!loading ? { scale: 0.97 } : {}}
+              className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition ${
                 loading
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl"
               }`}
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  <span>Signing In...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+              {loading ? "Signing in…" : "Sign In"}
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
           </form>
-
-          {/* Divider with OR */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">
-                New to CampusCareer?
-              </span>
-            </div>
-          </div>
-
-          {/* Sign Up Link */}
-          <div className="text-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition group"
-            >
-              Create an account
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
         </div>
-        {/* Security Badge */}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-            <Lock className="w-3 h-3" />
-            Your information is secure and encrypted
-          </p>
-        </div>
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-sm text-gray-600">
+          New to CampusCareer?{" "}
+          <Link
+            to="/register"
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );

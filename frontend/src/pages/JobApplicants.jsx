@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -18,6 +19,23 @@ const JobApplicants = () => {
   const { id } = useParams(); // Job ID
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+
+  const reduceMotion = useReducedMotion();
+  const fadeUp = {
+    hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: reduceMotion ? 0 : 0.35, ease: "easeOut" },
+    },
+  };
+  const stagger = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: reduceMotion ? 0 : 0.06 },
+    },
+  };
 
   const [applicants, setApplicants] = useState([]);
   const [jobTitle, setJobTitle] = useState("");
@@ -107,17 +125,27 @@ const JobApplicants = () => {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-[80vh]">
+      <motion.div
+        className="flex justify-center items-center h-[80vh]"
+        initial="hidden"
+        animate="visible"
+        variants={fadeUp}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      </motion.div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <motion.div
+      className="min-h-screen bg-gray-50 py-10 px-4"
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+    >
       <Toaster position="top-center" />
       <div className="container mx-auto max-w-6xl">
         {/* HEADER */}
-        <div className="mb-8">
+        <motion.div variants={fadeUp} className="mb-8">
           <button
             onClick={() => navigate(`/my-jobs`)}
             className="flex items-center text-gray-500 hover:text-blue-600 mb-4 transition"
@@ -137,11 +165,14 @@ const JobApplicants = () => {
               Total: {applicants.length}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* CONTENT */}
         {applicants.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center">
+          <motion.div
+            variants={fadeUp}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center"
+          >
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="w-10 h-10 text-gray-300" />
             </div>
@@ -151,9 +182,12 @@ const JobApplicants = () => {
             <p className="text-gray-500 mt-2">
               Wait for students to discover your job posting.
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <motion.div
+            variants={fadeUp}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+          >
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -318,10 +352,10 @@ const JobApplicants = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

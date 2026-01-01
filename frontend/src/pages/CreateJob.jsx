@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Briefcase,
   MapPin,
   DollarSign,
   Users,
-  FileText,
   Clock,
   Sparkles,
   ArrowRight,
@@ -16,11 +16,13 @@ import {
   Calendar,
 } from "lucide-react";
 
+const MIN_DESCRIPTION_LENGTH = 50;
+
 const CreateJob = () => {
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const [loading, setLoading] = useState(false);
 
-  // 1. Updated State to include 'deadline'
   const [jobData, setJobData] = useState({
     title: "",
     description: "",
@@ -28,60 +30,23 @@ const CreateJob = () => {
     salary_range: "",
     job_type: "Full-time",
     max_seats: 1,
-    deadline: "", // Initialize deadline
+    deadline: "",
   });
 
+  const [initialSnapshot] = useState(jobData);
+
+  /* ---------------- Helpers ---------------- */
   const handleChange = (e) => {
-    setJobData({ ...jobData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setJobData((prev) => ({ ...prev, [name]: value }));
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
 
-    const loadingToast = toast.loading("Creating your job posting...");
-
-    try {
-      const payload = { ...jobData };
-      if (!payload.deadline) {
-        payload.deadline = null;
-      }
-
-      const response = await api.post("/jobs/create", payload);
-
-      console.log("Job Posted:", response.data);
-
-      toast.success("Job posted successfully!", {
-        id: loadingToast,
-        duration: 3000,
-      });
-
-      setTimeout(() => {
-        navigate("/my-jobs");
-      }, 1500);
-    } catch (error) {
-      console.error("Post Job Error:", error);
-
-      if (error.response?.status === 403) {
-        toast.error("Only Companies can post jobs!", {
-          id: loadingToast,
-          duration: 4000,
-        });
-      } else {
-        const errorMsg =
-          error.response?.data?.detail ||
-          "Failed to post job. Please try again.";
-        toast.error(errorMsg, {
-          id: loadingToast,
-          duration: 4000,
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isDirty = useMemo(
+    () => JSON.stringify(jobData) !== JSON.stringify(initialSnapshot),
+    [jobData, initialSnapshot]
+  );
 
   const descriptionLength = jobData.description.length;
-  const minDescriptionLength = 50;
 
   const getCurrentDateTime = () => {
     const now = new Date();
@@ -89,247 +54,284 @@ const CreateJob = () => {
     return now.toISOString().slice(0, 16);
   };
 
+  const canSubmit =
+    isDirty &&
+    jobData.title.trim() &&
+    jobData.location.trim() &&
+    descriptionLength >= MIN_DESCRIPTION_LENGTH &&
+    !loading;
+
+  /* ---------------- Submit ---------------- */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+
+    setLoading(true);
+    const toastId = toast.loading("Creating job posting…");
+
+    try {
+      const payload = {
+        ...jobData,
+        deadline: jobData.deadline || null,
+      };
+
+      await api.post("/jobs/create", payload);
+
+      toast.success("Job posted successfully!", { id: toastId });
+      setTimeout(() => navigate("/my-jobs"), 1200);
+    } catch (error) {
+      const msg =
+        error.response?.status === 403
+          ? "Only companies can post jobs"
+          : error.response?.data?.detail ||
+            "Failed to post job. Please try again.";
+
+      toast.error(msg, { id: toastId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sectionAnim = {
+    hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  /* ---------------- Render ---------------- */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-12 px-4">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          success: { style: { background: "#10b981", color: "#fff" } },
-          error: { style: { background: "#ef4444", color: "#fff" } },
-        }}
-      />
-
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 -right-40 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div
-          className="absolute bottom-20 -left-40 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-      </div>
-
-      <div className="relative container mx-auto max-w-4xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30 mb-4">
-            <Briefcase className="w-8 h-8 text-white" />
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+      <div className="relative max-w-4xl mx-auto">
+        {/* Header */}
+        <header className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
+            <Briefcase className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900">
             Post a New Opportunity
           </h1>
-          <p className="text-gray-600">
-            Attract top talent with a detailed job posting
+          <p className="text-gray-600 mt-2">
+            Create a clear, compelling role to attract top talent
           </p>
-        </div>
+        </header>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-10">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Job Title */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white/80 backdrop-blur rounded-3xl shadow-xl border p-5 md:p-6 space-y-6"
+        >
+          {/* Section: Basics */}
+          <motion.section
+            variants={sectionAnim}
+            initial="hidden"
+            animate="visible"
+            className="space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">Job Information</h2>
+
+            {/* Title */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <label className="label">
                 <Briefcase className="w-4 h-4 text-blue-600" />
-                Job Title <span className="text-red-500">*</span>
+                Job Title *
               </label>
               <input
-                type="text"
                 name="title"
                 value={jobData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition text-gray-700"
+                className="input px-3 py-2.5"
                 placeholder="e.g. Senior React Developer"
               />
+              {!jobData.title.trim() && (
+                <p className="hint">Job title is required</p>
+              )}
             </div>
 
-            {/* Job Type & Salary Range */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Type + Salary */}
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <label className="label">
                   <Clock className="w-4 h-4 text-purple-600" />
-                  Job Type <span className="text-red-500">*</span>
+                  Job Type
                 </label>
                 <select
                   name="job_type"
                   value={jobData.job_type}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition appearance-none bg-white cursor-pointer"
+                  className="input px-3 py-2.5"
                 >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Internship">Internship</option>
-                  <option value="Contract">Contract</option>
+                  <option>Full-time</option>
+                  <option>Part-time</option>
+                  <option>Internship</option>
+                  <option>Contract</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <label className="label">
                   <DollarSign className="w-4 h-4 text-green-600" />
                   Salary Range
                 </label>
                 <input
-                  type="text"
                   name="salary_range"
                   value={jobData.salary_range}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
-                  placeholder="e.g. 80k - 120k PKR"
+                  className="input px-3 py-2.5"
+                  placeholder="e.g. 80k – 120k PKR"
                 />
               </div>
             </div>
+          </motion.section>
 
-            {/* Location & Seats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Section: Logistics */}
+          <motion.section
+            variants={sectionAnim}
+            initial="hidden"
+            animate="visible"
+            className="space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">Logistics</h2>
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <label className="label">
                   <MapPin className="w-4 h-4 text-red-600" />
-                  Location <span className="text-red-500">*</span>
+                  Location *
                 </label>
                 <input
-                  type="text"
                   name="location"
                   value={jobData.location}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
-                  placeholder="e.g. Remote, Lahore, or Hybrid"
+                  className="input px-3 py-2.5"
+                  placeholder="Remote, Hybrid, Lahore"
                 />
+                {!jobData.location.trim() && (
+                  <p className="hint">Location is required</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <label className="label">
                   <Users className="w-4 h-4 text-orange-600" />
                   Open Positions
                 </label>
                 <input
                   type="number"
+                  min="1"
+                  max="100"
                   name="max_seats"
                   value={jobData.max_seats}
                   onChange={handleChange}
-                  min="1"
-                  max="100"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
+                  className="input px-3 py-2.5"
                 />
               </div>
             </div>
 
-            {/* NEW SECTION: Deadline */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-pink-600" />
-                  Application Deadline
-                </label>
-                <input
-                  type="datetime-local"
-                  name="deadline"
-                  value={jobData.deadline}
-                  onChange={handleChange}
-                  min={getCurrentDateTime()} // Prevent selecting past dates
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition text-gray-700"
-                />
-                <p className="text-xs text-gray-400 mt-1 ml-1">
-                  Leave empty if there is no specific deadline
-                </p>
-              </div>
-
-              {/* Spacer div to keep grid alignment nice on desktop, or add another field here later */}
-              <div className="hidden md:block"></div>
-            </div>
-
-            {/* Description */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-600" />
-                Job Description <span className="text-red-500">*</span>
+              <label className="label">
+                <Calendar className="w-4 h-4 text-pink-600" />
+                Application Deadline
               </label>
-              <textarea
-                name="description"
-                value={jobData.description}
+              <input
+                type="datetime-local"
+                name="deadline"
+                value={jobData.deadline}
                 onChange={handleChange}
-                required
-                rows="8"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition resize-none"
-                placeholder="Describe the role, responsibilities, requirements, and what makes this opportunity exciting..."
-              ></textarea>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span
-                  className={`${
-                    descriptionLength < minDescriptionLength
-                      ? "text-orange-600"
-                      : "text-green-600"
-                  }`}
-                >
-                  {descriptionLength < minDescriptionLength
-                    ? `Write at least ${
-                        minDescriptionLength - descriptionLength
-                      } more characters for a good description`
-                    : "✓ Good description length"}
-                </span>
-                <span className="text-gray-500">
-                  {descriptionLength} characters
-                </span>
-              </div>
+                min={getCurrentDateTime()}
+                className="input px-3 py-2.5"
+              />
+              <p className="hint">Optional — leave empty for no deadline</p>
             </div>
+          </motion.section>
 
-            {/* Info Box */}
-            <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-4 flex gap-3">
-              <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-blue-900 mb-1">
-                  AI-Powered Matching
-                </h4>
-                <p className="text-sm text-blue-700">
-                  Your job will be analyzed by our AI to match with the most
-                  qualified candidates based on skills, experience, and
-                  compatibility.
-                </p>
-              </div>
-            </div>
+          {/* Section: Description */}
+          <motion.section
+            variants={sectionAnim}
+            initial="hidden"
+            animate="visible"
+            className="space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">Job Description</h2>
 
-            {/* Submit Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => navigate("/my-jobs")}
-                disabled={loading}
-                className="flex-1 px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            <textarea
+              name="description"
+              rows={5}
+              value={jobData.description}
+              onChange={handleChange}
+              className="input px-3 py-2.5 resize-none"
+              placeholder="Describe responsibilities, requirements, and growth opportunities…"
+            />
+
+            <div className="flex justify-between text-sm">
+              <span
+                className={
+                  descriptionLength < MIN_DESCRIPTION_LENGTH
+                    ? "text-orange-600"
+                    : "text-green-600"
+                }
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || descriptionLength < minDescriptionLength}
-                className={`flex-1 px-6 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
-                  loading || descriptionLength < minDescriptionLength
-                    ? "bg-gray-400 cursor-not-allowed text-white"
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5"
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    <span>Creating Job...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Post Job</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              <Building2 className="w-4 h-4" />
-              <span>
-                Job will be visible to all students immediately after posting
+                {descriptionLength < MIN_DESCRIPTION_LENGTH
+                  ? `Add ${
+                      MIN_DESCRIPTION_LENGTH - descriptionLength
+                    } more characters`
+                  : "✓ Good description length"}
               </span>
+              <span className="text-gray-500">{descriptionLength} chars</span>
             </div>
+          </motion.section>
+
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex gap-3">
+            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
+            <p className="text-sm text-blue-700">
+              Our AI analyzes this job to match it with the most relevant
+              candidates automatically.
+            </p>
           </div>
-        </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate("/my-jobs")}
+              disabled={loading}
+              className="btn-secondary py-2.5"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className={`btn-primary ${
+                !canSubmit ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {loading ? (
+                "Creating job…"
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Post Job
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {!isDirty && (
+            <p className="text-xs text-gray-400 text-center">
+              Make changes to enable posting
+            </p>
+          )}
+        </form>
+
+        <footer className="mt-6 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+          <Building2 className="w-4 h-4" />
+          Job becomes visible to students immediately after posting
+        </footer>
       </div>
-    </div>
+    </main>
   );
 };
 
