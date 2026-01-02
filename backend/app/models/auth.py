@@ -42,6 +42,10 @@ class Student(SQLModel, table=True):
     skills: Optional[str] = None
     resume_text: Optional[str] = None
     
+    # Embedding cache fields
+    embedding_cache: Optional[str] = None  # Stores JSON array of embedding vector
+    embedding_updated_at: Optional[datetime] = None  # Track when cache was generated
+    
     # Relationship
     user: Optional[User] = Relationship(back_populates="student_profile")
 

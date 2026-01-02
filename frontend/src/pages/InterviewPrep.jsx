@@ -82,17 +82,17 @@ const InterviewPrep = () => {
   // --- LOADING STATE (AI Thinking) ---
   if (loading)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center items-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col justify-center items-center p-4">
         <div className="relative">
-          <div className="absolute inset-0 bg-purple-200 rounded-full blur-xl animate-pulse"></div>
-          <div className="relative bg-white p-6 rounded-2xl shadow-xl">
+          <div className="absolute inset-0 bg-purple-200 dark:bg-purple-900/30 rounded-full blur-xl animate-pulse"></div>
+          <div className="relative bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
             <Brain className="w-16 h-16 text-purple-600 animate-bounce" />
           </div>
         </div>
-        <h2 className="mt-8 text-2xl font-bold text-gray-800">
+        <h2 className="mt-8 text-2xl font-bold text-gray-800 dark:text-white">
           AI is analyzing your resume...
         </h2>
-        <p className="text-gray-500 mt-2 text-center max-w-md">
+        <p className="text-gray-500 dark:text-gray-400 mt-2 text-center max-w-md">
           We are comparing your skills against the job description to find your
           gaps and generate custom questions.
         </p>
@@ -116,16 +116,18 @@ const InterviewPrep = () => {
   // --- ERROR STATE ---
   if (error)
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="bg-red-100 p-4 rounded-full w-fit mx-auto mb-4">
+          <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full w-fit mx-auto mb-4">
             <AlertCircle className="w-10 h-10 text-red-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">Analysis Failed</h3>
-          <p className="text-gray-600 mt-2 mb-6">{error}</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+            Analysis Failed
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 mb-6">{error}</p>
           <button
             onClick={() => navigate(`/jobs/${id}`)}
-            className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+            className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
           >
             Back to Job
           </button>
@@ -134,13 +136,13 @@ const InterviewPrep = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
       <Toaster position="top-center" />
       <div className="container mx-auto max-w-4xl">
         {/* HEADER */}
         <button
           onClick={() => navigate(`/jobs/${id}`)}
-          className="flex items-center text-gray-500 hover:text-purple-600 mb-6 transition font-medium"
+          className="flex items-center text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition font-medium"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Job Details
         </button>

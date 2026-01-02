@@ -117,13 +117,13 @@ const AdminDashboard = () => {
 
   if (loading)
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-purple-600" />
             <div className="space-y-2">
-              <div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-72 bg-gray-200 rounded animate-pulse" />
+              <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-72 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             </div>
           </div>
 
@@ -131,18 +131,18 @@ const AdminDashboard = () => {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white/80 backdrop-blur rounded-3xl border border-gray-100 p-5 shadow-sm"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm"
               >
-                <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
-                <div className="h-8 w-14 bg-gray-200 rounded animate-pulse mt-3" />
+                <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-8 w-14 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-3" />
               </div>
             ))}
           </div>
 
-          <div className="bg-white/80 backdrop-blur rounded-3xl border border-gray-100 p-6 shadow-sm">
-            <div className="h-4 w-44 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 w-full bg-gray-200 rounded animate-pulse mt-5" />
-            <div className="h-48 w-full bg-gray-200 rounded animate-pulse mt-4" />
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+            <div className="h-4 w-44 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-5" />
+            <div className="h-48 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-4" />
           </div>
         </div>
       </main>

@@ -137,7 +137,7 @@ const JobApplicants = () => {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 py-10 px-4"
+      className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4"
       initial="hidden"
       animate="visible"
       variants={stagger}
@@ -171,9 +171,9 @@ const JobApplicants = () => {
         {applicants.length === 0 ? (
           <motion.div
             variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center"
           >
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="w-10 h-10 text-gray-300" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">

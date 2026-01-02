@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -23,39 +24,41 @@ import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Toaster position="top-center" reverseOrder={false} />
-          <Navbar />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            <Toaster position="top-center" reverseOrder={false} />
+            <Navbar />
 
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/jobs" element={<Jobs />} />
-            <Route path="/post-job" element={<CreateJob />} />
-            <Route path="/jobs/:id" element={<JobDetails />} />
-            <Route path="/my-jobs" element={<MyJobs />} />
-            <Route path="/jobs/:id/edit" element={<EditJob />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/recommendations" element={<RecommendedJobs />} />
-            <Route path="/saved-jobs" element={<SavedJobs />} />
-            <Route path="/my-applications" element={<MyApplications />} />
-            <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
-            <Route
-              path="/jobs/:id/interview-prep"
-              element={<InterviewPrep />}
-            />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Routes>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/post-job" element={<CreateJob />} />
+              <Route path="/jobs/:id" element={<JobDetails />} />
+              <Route path="/my-jobs" element={<MyJobs />} />
+              <Route path="/jobs/:id/edit" element={<EditJob />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/recommendations" element={<RecommendedJobs />} />
+              <Route path="/saved-jobs" element={<SavedJobs />} />
+              <Route path="/my-applications" element={<MyApplications />} />
+              <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
+              <Route
+                path="/jobs/:id/interview-prep"
+                element={<InterviewPrep />}
+              />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+            </Routes>
 
-          {/* Vercel Analytics */}
-          <Analytics />
-        </div>
-      </Router>
-    </AuthProvider>
+            {/* Vercel Analytics */}
+            <Analytics />
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

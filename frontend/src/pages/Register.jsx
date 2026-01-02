@@ -82,7 +82,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">
       <div className="relative w-full max-w-md">
         {/* Header */}
         <motion.div
@@ -95,26 +95,26 @@ const Register = () => {
           <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Join CampusCareer
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Step <strong>1 of 2</strong> — Choose role & create account
           </p>
         </motion.div>
 
         {/* Card */}
-        <div className="bg-white/90 backdrop-blur rounded-3xl shadow-2xl border p-8">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-3xl shadow-2xl border dark:border-gray-700 p-8">
           {/* Role Selector */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              I’m joining as
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              I'm joining as
             </label>
 
             <div
               role="radiogroup"
               aria-label="Select role"
-              className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-2xl"
+              className="grid grid-cols-2 gap-3 bg-gray-50 dark:bg-gray-700 p-2 rounded-2xl"
             >
               {[
                 { key: "student", label: "Student", icon: User },
@@ -130,8 +130,8 @@ const Register = () => {
                   onClick={() => setFormData((f) => ({ ...f, role: key }))}
                   className={`p-4 rounded-xl border-2 transition focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     formData.role === key
-                      ? "bg-blue-50 border-blue-600"
-                      : "bg-white border-gray-200"
+                      ? "bg-blue-50 dark:bg-blue-900/30 border-blue-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
                   }`}
                 >
                   <Icon
@@ -139,7 +139,9 @@ const Register = () => {
                       formData.role === key ? "text-blue-600" : "text-gray-400"
                     }`}
                   />
-                  <p className="text-sm font-semibold">{label}</p>
+                  <p className="text-sm font-semibold dark:text-gray-200">
+                    {label}
+                  </p>
                 </motion.button>
               ))}
             </div>
@@ -149,11 +151,11 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
             <div>
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {formData.role === "company" ? "Company Name" : "Full Name"}
               </label>
               <div className="relative mt-1">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                 <input
                   required
                   name="full_name"
@@ -164,18 +166,18 @@ const Register = () => {
                       ? "Acme Technologies"
                       : "John Doe"
                   }
-                  className="w-full pl-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full pl-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <div className="relative mt-1">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                 <input
                   required
                   type="email"
@@ -187,31 +189,31 @@ const Register = () => {
                       ? "hr@company.com"
                       : "student@university.edu"
                   }
-                  className="w-full pl-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full pl-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <div className="relative mt-1">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                 <input
                   required
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full pl-12 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label="Toggle password visibility"
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 dark:text-gray-400"
                 >
                   {showPassword ? <EyeOff /> : <Eye />}
                 </button>
@@ -229,7 +231,9 @@ const Register = () => {
                     <p
                       key={label}
                       className={`flex items-center gap-1 ${
-                        ok ? "text-green-600" : "text-gray-400"
+                        ok
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-gray-400"
                       }`}
                     >
                       <CheckCircle2 className="w-3 h-3" /> {label}
@@ -247,7 +251,7 @@ const Register = () => {
               whileTap={!loading ? { scale: 0.97 } : {}}
               className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition ${
                 loading
-                  ? "bg-gray-400"
+                  ? "bg-gray-400 dark:bg-gray-600"
                   : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl"
               }`}
             >
@@ -255,18 +259,18 @@ const Register = () => {
               <ArrowRight />
             </motion.button>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
               By registering, you agree to our Terms & Privacy Policy
             </p>
           </form>
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-semibold text-blue-600 hover:underline"
+            className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
           >
             Sign in
           </Link>

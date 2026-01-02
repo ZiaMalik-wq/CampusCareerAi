@@ -63,13 +63,13 @@ const AnalyticsPage = () => {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600" />
             <div className="space-y-2">
-              <div className="h-5 w-56 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-80 bg-gray-200 rounded animate-pulse" />
+              <div className="h-5 w-56 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-80 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             </div>
           </div>
 
@@ -77,10 +77,10 @@ const AnalyticsPage = () => {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white/80 backdrop-blur rounded-3xl border border-gray-100 p-5 shadow-sm"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm"
               >
-                <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
-                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mt-3" />
+                <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-3" />
               </div>
             ))}
           </div>
@@ -91,13 +91,13 @@ const AnalyticsPage = () => {
 
   if (!data) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-xl border p-6 text-center">
-            <h2 className="text-xl font-bold text-gray-900">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               No analytics available
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               {error || "Please refresh and try again."}
             </p>
           </div>
@@ -131,7 +131,7 @@ const AnalyticsPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -145,10 +145,10 @@ const AnalyticsPage = () => {
               <BarChart2 className="w-7 h-7 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                 {isCompany ? "Recruitment Analytics" : "My Career Insights"}
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 {isCompany
                   ? "Track job performance and your candidate pipeline."
                   : "Visualize your application progress and market trends."}
@@ -388,23 +388,39 @@ const AnalyticsPage = () => {
 // --- Sub-components for cleaner code ---
 
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white/80 backdrop-blur rounded-3xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition flex items-center justify-between">
-    <div className="min-w-0">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex items-center justify-between group relative overflow-hidden">
+    {/* Decorative gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+    <div className="min-w-0 relative z-10">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         {title}
       </p>
-      <h3 className="text-3xl font-bold text-gray-900 mt-1">{value}</h3>
+      <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+        {value}
+      </h3>
     </div>
-    <div className={`p-3 rounded-2xl ${color}`}>{icon}</div>
+    <div className={`p-3 rounded-2xl ${color} dark:opacity-90 relative z-10`}>
+      {icon}
+    </div>
   </div>
 );
 
 const ChartCard = ({ title, children }) => (
-  <div className="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-gray-100">
-    <div className="flex items-center justify-between gap-4 mb-4">
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
+    {/* Decorative gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+    <div className="relative z-10">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          {title}
+        </h3>
+      </div>
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        {children}
+      </div>
     </div>
-    <div className="pt-4 border-t border-gray-100">{children}</div>
   </div>
 );
 

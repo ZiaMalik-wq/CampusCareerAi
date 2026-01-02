@@ -10,6 +10,13 @@ from app.api.deps import get_current_user, get_optional_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
 from app.core.llm import generate_interview_questions 
+from app.core.skill_matcher import (
+    match_skills,
+    calculate_skill_match_score,
+    extract_skills_from_text,
+    format_skill,
+)
+from app.core.embedding_cache import generate_and_cache_embedding
 import logging
 from sqlmodel import select, col, or_
 from app.core.embedding_utils import build_student_embedding_text, build_job_embedding_text
@@ -18,6 +25,39 @@ from app.models.application import Application
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.get("/", response_model=list[JobPublic])
+def get_all_jobs(
+    session: Session = Depends(get_session),
+    limit: int = 50,
+    location: Optional[str] = None,
+    job_type: Optional[str] = None
+):
+    """
+    Get all active jobs with optional filters.
+    Supports location and job_type filtering.
+    """
+    statement = select(Job).where(Job.is_active == True)
+    
+    # Apply filters
+    if location:
+        statement = statement.where(col(Job.location).ilike(f"%{location}%"))
+    if job_type:
+        statement = statement.where(Job.job_type == job_type)
+    
+    statement = statement.order_by(Job.created_at.desc()).limit(limit)
+    
+    jobs = session.exec(statement).all()
+    
+    public_jobs = []
+    for job in jobs:
+        job_data = job.model_dump()
+        if job.company:
+            job_data["company_name"] = job.company.company_name
+            job_data["company_location"] = job.company.location
+        public_jobs.append(JobPublic(**job_data))
+        
+    return public_jobs
 
 @router.post("/create", response_model=JobPublic)
 def create_new_job(
@@ -95,12 +135,14 @@ def create_new_job(
 def search_jobs_sql(
     q: str,  # The search query (e.g., "Python")
     session: Session = Depends(get_session),
-    limit: int = 20
+    limit: int = 20,
+    location: Optional[str] = None,
+    job_type: Optional[str] = None
 ):
     """
-    Keyword-based Search (SQL).
+    Keyword-based Search (SQL) with Filters.
     Looks for the query string in Title, Description, or Location.
-    Case-insensitive.
+    Case-insensitive. Supports location and job_type filtering.
     """
     # 1. Build the Query
     # ILIKE is PostgreSQL specific for "Case Insensitive LIKE"
@@ -113,7 +155,15 @@ def search_jobs_sql(
             col(Job.description).ilike(query_pattern),
             col(Job.location).ilike(query_pattern)
         )
-    ).where(Job.is_active == True).limit(limit)
+    ).where(Job.is_active == True)
+    
+    # Apply filters
+    if location:
+        statement = statement.where(col(Job.location).ilike(f"%{location}%"))
+    if job_type:
+        statement = statement.where(Job.job_type == job_type)
+    
+    statement = statement.limit(limit)
 
     # 2. Execute
     jobs = session.exec(statement).all()
@@ -133,13 +183,16 @@ def search_jobs_sql(
 def search_jobs_semantic(
     q: str, 
     session: Session = Depends(get_session),
-    limit: int = 10
+    limit: int = 10,
+    location: Optional[str] = None,
+    job_type: Optional[str] = None
 ):
     """
-    Semantic Search (AI-Powered).
+    Semantic Search (AI-Powered) with Filters.
     1. Converts query -> Vector.
     2. Finds nearest neighbors in Qdrant.
     3. Returns matching jobs from SQL.
+    4. Applies location and job_type filters.
     """
     if not q:
         return []
@@ -159,9 +212,16 @@ def search_jobs_semantic(
     # Qdrant returns IDs as integers (because we saved them as ints)
     job_ids = [result.id for result in search_results]
 
-    # 4. Fetch full Job details from SQL
+    # 4. Fetch full Job details from SQL with filters
     # We use .in_(job_ids) to get them all in one query
     statement = select(Job).where(Job.id.in_(job_ids))
+    
+    # Apply filters
+    if location:
+        statement = statement.where(col(Job.location).ilike(f"%{location}%"))
+    if job_type:
+        statement = statement.where(Job.job_type == job_type)
+    
     jobs = session.exec(statement).all()
 
     # 5. Preserve the Order! 
@@ -190,12 +250,15 @@ def search_jobs_semantic(
 def search_jobs_hybrid(
     q: str,
     session: Session = Depends(get_session),
-    limit: int = 10
+    limit: int = 10,
+    location: Optional[str] = None,
+    job_type: Optional[str] = None
 ):
     """
-    Hybrid Search.
+    Hybrid Search with Weighted Scoring and Filters.
     Combines SQL Keyword Search (Exact matches) + Vector Semantic Search (Meaning matches).
-    Deduplicates results to avoid showing the same job twice.
+    Results are ranked by: Semantic Score (70%) + Keyword Match Bonus (30%)
+    Supports location and job_type filtering.
     """
     if not q:
         return []
@@ -203,9 +266,12 @@ def search_jobs_hybrid(
     # 1. Run Semantic Search
     # Convert query -> vector -> Qdrant search
     query_vector = ai_model.generate_embedding(q)
-    # We ask for 'limit' number of semantic results
-    semantic_points = vector_db.search(vector=query_vector, limit=limit)
-    semantic_job_ids = [point.id for point in semantic_points]
+    # Fetch more semantic results for better coverage
+    semantic_points = vector_db.search(vector=query_vector, limit=limit * 2)
+    
+    # Store semantic scores (Qdrant returns scores 0.0 to 1.0)
+    semantic_scores = {point.id: point.score for point in semantic_points}
+    semantic_job_ids = list(semantic_scores.keys())
 
     # 2. Run Keyword Search (The "Exact" Search)
     query_pattern = f"%{q}%"
@@ -215,31 +281,60 @@ def search_jobs_hybrid(
             col(Job.description).ilike(query_pattern),
             col(Job.location).ilike(query_pattern)
         )
-    ).where(Job.is_active == True).limit(limit)
+    ).where(Job.is_active == True)
+    
+    # Apply filters to keyword search
+    if location:
+        statement = statement.where(col(Job.location).ilike(f"%{location}%"))
+    if job_type:
+        statement = statement.where(Job.job_type == job_type)
+    
+    statement = statement.limit(limit)
     
     keyword_jobs = session.exec(statement).all()
     keyword_job_ids = [job.id for job in keyword_jobs]
 
-    # 3. Combine & Deduplicate
-    # We use a Python Set to ensure unique IDs
+    # 3. Combine & Calculate Weighted Scores
     all_ids = set(semantic_job_ids + keyword_job_ids)
     
     if not all_ids:
         return []
 
-    # 4. Fetch Full Details from SQL
-    # Fetch all jobs that matched EITHER search
+    # 4. Fetch Full Details from SQL with filters
     statement = select(Job).where(Job.id.in_(all_ids))
+    
+    # Apply filters
+    if location:
+        statement = statement.where(col(Job.location).ilike(f"%{location}%"))
+    if job_type:
+        statement = statement.where(Job.job_type == job_type)
+    
     final_jobs = session.exec(statement).all()
 
-    # 5. Formatting (Add Company Name)
-    public_jobs = []
+    # 5. Calculate Combined Scores & Format
+    scored_jobs = []
     for job in final_jobs:
+        # Semantic score (0.0 to 1.0, weight 70%)
+        semantic_score = semantic_scores.get(job.id, 0.0) * 0.7
+        
+        # Keyword match bonus (weight 30%)
+        keyword_bonus = 0.3 if job.id in keyword_job_ids else 0.0
+        
+        # Combined score
+        total_score = semantic_score + keyword_bonus
+        
+        # Format job data
         job_data = job.model_dump()
         if job.company:
             job_data["company_name"] = job.company.company_name
             job_data["company_location"] = job.company.location
-        public_jobs.append(JobPublic(**job_data))
+        job_data["match_score"] = round(total_score, 3)
+        
+        scored_jobs.append((total_score, JobPublic(**job_data)))
+    
+    # 6. Sort by score (highest first) and return top results
+    scored_jobs.sort(key=lambda x: x[0], reverse=True)
+    public_jobs = [job for score, job in scored_jobs[:limit]]
         
     return public_jobs
 
@@ -251,8 +346,9 @@ def get_job_recommendations(
     limit: int = 5
 ):
     """
-    Advanced AI Recommendation Engine.
+    Advanced AI Recommendation Engine with Smart Skill Matching and Embedding Cache.
     Implements Weighted Scoring: Semantic (50%) + Skill Overlap (30%) + Location (20%)
+    Uses cached embeddings to avoid regenerating on every request (huge performance boost!).
     """
     # 1. Validation
     if current_user.role != UserRole.STUDENT:
@@ -262,21 +358,25 @@ def get_job_recommendations(
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
 
-    # 2. Prepare Skills List (Crucial for the Highlighter)
+    # 2. Prepare Skills List for Smart Matching
+    # ONLY use profile skills - these are the source of truth set by the student
     student_skills_list = []
     if student.skills:
-        student_skills_list = [s.strip().lower() for s in student.skills.split(",") if s.strip()]
+        student_skills_list = [s.strip() for s in student.skills.split(",") if s.strip()]
 
-    # 3. Build Text for AI Embedding
-    text_to_embed = build_student_embedding_text(student.skills, student.resume_text)
+    # Extract canonical skill keys from profile
+    profile_skill_keys = set(extract_skills_from_text(", ".join(student_skills_list)))
+
+    # 3. Get or Generate Cached Embedding (Performance Optimization!)
+    query_vector = generate_and_cache_embedding(student, session)
     
-    if not text_to_embed:
-        # Fallback: If no data, return empty list (or latest jobs if you prefer)
+    if not query_vector:
+        # Fallback: If no embedding could be generated, return empty list
+        logger.warning(f"No embedding available for student {student.id}")
         return []
 
-    # 4. Get Candidates from Qdrant
-    query_vector = ai_model.generate_embedding(text_to_embed)
-    search_results = vector_db.search(vector=query_vector, limit=20)
+    # 4. Get Candidates from Qdrant using cached embedding
+    search_results = vector_db.search(vector=query_vector, limit=30)
     
     if not search_results:
         return []
@@ -296,42 +396,73 @@ def get_job_recommendations(
             continue
         if job.deadline and job.deadline < now:
             continue
+            
         # A. Semantic Score (0.0 to 1.0)
         semantic_score = scores_map.get(job.id, 0)
 
-        # B. Skill Overlap Score
-        # We check if the student's specific skills appear in the Job text
-        job_text = (job.title + " " + job.description).lower()
-        matching_skills = []
-        missing_skills = []
-        
-        for skill in student_skills_list:
-            if skill in job_text:
-                matching_skills.append(skill)
-            else:
-                missing_skills.append(skill)
-        
-        skill_score = 0
-        if student_skills_list:
-            skill_score = len(matching_skills) / len(student_skills_list)
+        # B. ENHANCED Skill Overlap Score with Smart Matching
+        job_text = job.title + " " + job.description
+
+        # Extract skills implied/required by the job, then compute coverage.
+        # Only match against PROFILE SKILLS (student.skills field).
+        job_required_keys = sorted(set(extract_skills_from_text(job_text)))
+
+        if job_required_keys:
+            matching_required_keys = [k for k in job_required_keys if k in profile_skill_keys]
+            missing_required_keys = [k for k in job_required_keys if k not in profile_skill_keys]
+
+            matching_skills = [format_skill(k) for k in matching_required_keys]
+            missing_skills = [format_skill(k) for k in missing_required_keys]
+
+            skill_score = len(matching_required_keys) / len(job_required_keys)
+        else:
+            # Fallback: can't extract job-required skills reliably.
+            # Show only positive matches from the student's *profile* skills.
+            matching_profile_skills, _ = match_skills(student_skills_list, job_text)
+            matching_skills = matching_profile_skills
+            missing_skills = []
+
+            skill_score = 0
+            if student_skills_list:
+                skill_score = len(matching_profile_skills) / len(student_skills_list)
 
         # C. Location Score
         location_score = 0
         if student.city and job.location:
-            if student.city.lower() in job.location.lower():
+            # Normalize for comparison
+            student_city = student.city.lower().strip()
+            job_location = job.location.lower().strip()
+            
+            if student_city in job_location:
                 location_score = 1.0
-            elif "remote" in job.location.lower():
-                location_score = 0.8 # Remote is good too
+            elif "remote" in job_location or "hybrid" in job_location:
+                location_score = 0.8
+            # Partial match (e.g., "New York" in "New York, NY")
+            elif any(word in job_location for word in student_city.split() if len(word) > 3):
+                location_score = 0.7
         
         # 50% AI + 30% Skills + 20% Location
         final_score = (semantic_score * 0.5) + (skill_score * 0.3) + (location_score * 0.2)
         final_percent = round(final_score * 100, 1)
-        reason = f"High semantic match ({round(semantic_score*100)}%). "
+        
+        # Enhanced reason generation
+        reason_parts = []
+        reason_parts.append(f"AI match: {round(semantic_score*100)}%")
+        
         if matching_skills:
-            # Show first 3 matching skills in the reason
-            reason += f"Matches skills: {', '.join(matching_skills[:3])}. "
-        if location_score >= 0.8:
-            reason += "Location/Remote match."
+            # Show up to 4 matching skills
+            skills_display = ', '.join(matching_skills[:4])
+            if len(matching_skills) > 4:
+                skills_display += f" +{len(matching_skills)-4} more"
+            reason_parts.append(f"Matches: {skills_display}")
+        
+        if location_score >= 0.7:
+            if location_score == 1.0:
+                reason_parts.append("Location match")
+            else:
+                reason_parts.append("Remote/Hybrid available")
+        
+        reason = ". ".join(reason_parts) + "."
 
         # Prepare Response Object
         job_data = job.model_dump()
@@ -348,7 +479,7 @@ def get_job_recommendations(
         )
         final_recommendations.append(rec)
 
-    # 6. Final Sort by our NEW Weighted Score
+    # 6. Final Sort by Weighted Score
     final_recommendations.sort(key=lambda x: x.match_score, reverse=True)
 
     return final_recommendations[:limit]

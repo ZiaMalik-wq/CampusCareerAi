@@ -22,7 +22,7 @@ const MobileNav = ({
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 bg-black/20 z-40"
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -37,7 +37,7 @@ const MobileNav = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -20, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed top-16 left-0 right-0 bg-white z-50 shadow-lg"
+            className="fixed top-16 left-0 right-0 bg-white dark:bg-gray-800 z-50 shadow-lg border-b dark:border-gray-700"
           >
             <NavLinks links={navLinks} mobile onClick={() => setOpen(false)} />
 
@@ -45,14 +45,14 @@ const MobileNav = ({
               <>
                 <Link
                   to="/profile"
-                  className="block px-4 py-3"
+                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   onClick={() => setOpen(false)}
                 >
                   My Profile
                 </Link>
                 <Link
                   to="/analytics"
-                  className="block px-4 py-3"
+                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   onClick={() => setOpen(false)}
                 >
                   Analytics
@@ -64,7 +64,7 @@ const MobileNav = ({
               <Link
                 to="/post-job"
                 onClick={() => setOpen(false)}
-                className="block mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center"
+                className="block mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center hover:shadow-lg transition-all"
               >
                 Post Job
               </Link>
@@ -73,7 +73,7 @@ const MobileNav = ({
             {user ? (
               <button
                 onClick={onLogout}
-                className="w-full px-4 py-3 text-red-600 flex items-center gap-2"
+                className="w-full px-4 py-3 text-red-600 dark:text-red-400 flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -83,14 +83,14 @@ const MobileNav = ({
                 <Link
                   to="/login"
                   onClick={() => setOpen(false)}
-                  className="block px-4 py-3"
+                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setOpen(false)}
-                  className="block px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center"
+                  className="block mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center rounded-lg hover:shadow-lg transition-all"
                 >
                   Register
                 </Link>

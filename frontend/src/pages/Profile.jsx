@@ -22,7 +22,9 @@ const fadeUp = {
 };
 
 const Skeleton = ({ className }) => (
-  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+  <div
+    className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`}
+  />
 );
 
 const Profile = () => {
@@ -207,7 +209,7 @@ const Profile = () => {
     }
   };
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 py-12 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-12 px-4">
       <div className="max-w-6xl mx-auto space-y-10">
         {/* Header */}
         <motion.header
@@ -224,10 +226,10 @@ const Profile = () => {
             )}
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {isCompany ? "Company Profile" : "My Profile"}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {isCompany
                 ? "What students will see about your company"
                 : "Your information used for job matching"}
@@ -244,9 +246,9 @@ const Profile = () => {
               animate="visible"
               variants={fadeUp}
               onSubmit={handleStudentSave}
-              className="lg:col-span-2 bg-white rounded-3xl p-8 shadow border space-y-6"
+              className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-3xl p-8 shadow border dark:border-gray-700 space-y-6"
             >
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                 Personal Information
               </h2>
 
@@ -255,17 +257,19 @@ const Profile = () => {
                 value={studentData.full_name}
                 onChange={handleStudentChange}
                 placeholder="Full Name"
-                className="input"
+                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
 
-              <h3 className="text-sm font-semibold text-gray-600">Education</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                Education
+              </h3>
 
               <input
                 name="university"
                 value={studentData.university}
                 onChange={handleStudentChange}
                 placeholder="University"
-                className="input"
+                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -274,25 +278,27 @@ const Profile = () => {
                   value={studentData.city}
                   onChange={handleStudentChange}
                   placeholder="City"
-                  className="input"
+                  className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
                 <input
                   name="cgpa"
                   value={studentData.cgpa}
                   onChange={handleStudentChange}
                   placeholder="CGPA"
-                  className="input"
+                  className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
 
-              <h3 className="text-sm font-semibold text-gray-600">Skills</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                Skills
+              </h3>
 
               <input
                 name="skills"
                 value={studentData.skills}
                 onChange={handleStudentChange}
                 placeholder="Python, React, SQL"
-                className="input"
+                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
 
               <button
@@ -309,16 +315,16 @@ const Profile = () => {
               initial="hidden"
               animate="visible"
               variants={fadeUp}
-              className="bg-white rounded-3xl p-8 shadow border"
+              className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow border dark:border-gray-700"
             >
-              <h2 className="text-xl font-bold mb-4">Resume</h2>
+              <h2 className="text-xl font-bold mb-4 dark:text-white">Resume</h2>
 
               <label
                 htmlFor="resume-upload"
-                className="block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50 focus-within:ring-2"
+                className="block border-2 border-dashed dark:border-gray-600 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 focus-within:ring-2"
               >
-                <Upload className="mx-auto w-8 h-8 text-gray-400" />
-                <span className="block mt-2 font-semibold">
+                <Upload className="mx-auto w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <span className="block mt-2 font-semibold dark:text-gray-200">
                   Upload PDF Resume
                 </span>
                 <input
@@ -352,16 +358,18 @@ const Profile = () => {
             animate="visible"
             variants={fadeUp}
             onSubmit={handleCompanySave}
-            className="bg-white rounded-3xl p-8 shadow border space-y-6 max-w-3xl"
+            className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow border dark:border-gray-700 space-y-6 max-w-3xl"
           >
-            <h2 className="text-xl font-bold">Company Information</h2>
+            <h2 className="text-xl font-bold dark:text-white">
+              Company Information
+            </h2>
 
             <input
               name="company_name"
               value={companyData.company_name}
               onChange={handleCompanyChange}
               placeholder="Company Name"
-              className="input"
+              className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -370,24 +378,26 @@ const Profile = () => {
                 value={companyData.location}
                 onChange={handleCompanyChange}
                 placeholder="Location"
-                className="input"
+                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               <input
                 name="website"
                 value={companyData.website}
                 onChange={handleCompanyChange}
                 placeholder="Website"
-                className="input"
+                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
 
             {/* Preview */}
-            <div className="bg-blue-50 p-4 rounded-xl border">
-              <p className="text-xs font-semibold text-blue-700 mb-1">
+            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border dark:border-blue-700">
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
                 Student Preview
               </p>
-              <p className="font-bold">{companyData.company_name}</p>
-              <p className="text-sm text-gray-600">
+              <p className="font-bold dark:text-white">
+                {companyData.company_name}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {companyData.location || "Location not specified"}
               </p>
             </div>

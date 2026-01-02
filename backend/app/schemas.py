@@ -19,6 +19,7 @@ class UserPublic(BaseModel):
     email: str
     role: UserRole
     full_name: Optional[str] = None
+    company_profile_id: Optional[int] = None
     
 # --- Admin Schemas ---
 class SystemStats(BaseModel):

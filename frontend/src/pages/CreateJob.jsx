@@ -99,24 +99,24 @@ const CreateJob = () => {
 
   /* ---------------- Render ---------------- */
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
       <div className="relative max-w-4xl mx-auto">
         {/* Header */}
         <header className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
             <Briefcase className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
             Post a New Opportunity
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Create a clear, compelling role to attract top talent
           </p>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white/80 backdrop-blur rounded-3xl shadow-xl border p-5 md:p-6 space-y-6"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-xl border dark:border-gray-700 p-5 md:p-6 space-y-6"
         >
           {/* Section: Basics */}
           <motion.section
@@ -125,7 +125,9 @@ const CreateJob = () => {
             animate="visible"
             className="space-y-4"
           >
-            <h2 className="text-lg font-bold text-gray-900">Job Information</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Job Information
+            </h2>
 
             {/* Title */}
             <div>
@@ -138,11 +140,11 @@ const CreateJob = () => {
                 value={jobData.title}
                 onChange={handleChange}
                 required
-                className="input px-3 py-2.5"
+                className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="e.g. Senior React Developer"
               />
               {!jobData.title.trim() && (
-                <p className="hint">Job title is required</p>
+                <p className="hint dark:text-gray-400">Job title is required</p>
               )}
             </div>
 
@@ -157,7 +159,7 @@ const CreateJob = () => {
                   name="job_type"
                   value={jobData.job_type}
                   onChange={handleChange}
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 >
                   <option>Full-time</option>
                   <option>Part-time</option>
@@ -175,7 +177,7 @@ const CreateJob = () => {
                   name="salary_range"
                   value={jobData.salary_range}
                   onChange={handleChange}
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   placeholder="e.g. 80k – 120k PKR"
                 />
               </div>
@@ -189,7 +191,9 @@ const CreateJob = () => {
             animate="visible"
             className="space-y-4"
           >
-            <h2 className="text-lg font-bold text-gray-900">Logistics</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Logistics
+            </h2>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -202,11 +206,13 @@ const CreateJob = () => {
                   value={jobData.location}
                   onChange={handleChange}
                   required
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   placeholder="Remote, Hybrid, Lahore"
                 />
                 {!jobData.location.trim() && (
-                  <p className="hint">Location is required</p>
+                  <p className="hint dark:text-gray-400">
+                    Location is required
+                  </p>
                 )}
               </div>
 
@@ -222,7 +228,7 @@ const CreateJob = () => {
                   name="max_seats"
                   value={jobData.max_seats}
                   onChange={handleChange}
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
             </div>
@@ -238,9 +244,11 @@ const CreateJob = () => {
                 value={jobData.deadline}
                 onChange={handleChange}
                 min={getCurrentDateTime()}
-                className="input px-3 py-2.5"
+                className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
-              <p className="hint">Optional — leave empty for no deadline</p>
+              <p className="hint dark:text-gray-400">
+                Optional — leave empty for no deadline
+              </p>
             </div>
           </motion.section>
 
@@ -251,14 +259,16 @@ const CreateJob = () => {
             animate="visible"
             className="space-y-4"
           >
-            <h2 className="text-lg font-bold text-gray-900">Job Description</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Job Description
+            </h2>
 
             <textarea
               name="description"
               rows={5}
               value={jobData.description}
               onChange={handleChange}
-              className="input px-3 py-2.5 resize-none"
+              className="input px-3 py-2.5 resize-none dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:placeholder-gray-400"
               placeholder="Describe responsibilities, requirements, and growth opportunities…"
             />
 
@@ -276,14 +286,16 @@ const CreateJob = () => {
                     } more characters`
                   : "✓ Good description length"}
               </span>
-              <span className="text-gray-500">{descriptionLength} chars</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                {descriptionLength} chars
+              </span>
             </div>
           </motion.section>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
-            <p className="text-sm text-blue-700">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 rounded-2xl p-3 flex gap-3">
+            <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               Our AI analyzes this job to match it with the most relevant
               candidates automatically.
             </p>
@@ -295,7 +307,7 @@ const CreateJob = () => {
               type="button"
               onClick={() => navigate("/my-jobs")}
               disabled={loading}
-              className="btn-secondary py-2.5"
+              className="btn-secondary py-2.5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
             >
               Cancel
             </button>
@@ -326,7 +338,7 @@ const CreateJob = () => {
           )}
         </form>
 
-        <footer className="mt-6 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+        <footer className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
           <Building2 className="w-4 h-4" />
           Job becomes visible to students immediately after posting
         </footer>

@@ -6,6 +6,7 @@ from app.api.deps import get_current_user
 from app.schemas import StudentUpdate, StudentPublic
 from app.core.pdf_utils import extract_text_from_pdf
 from app.core.supabase import supabase
+from app.core.embedding_cache import generate_and_cache_embedding
 
 router = APIRouter()
 
@@ -49,6 +50,7 @@ def update_student_profile(
 ):
     """
     Update the logged-in student's profile (University, CGPA, Skills).
+    Automatically regenerates embedding cache if skills are updated.
     """
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can update profiles")
@@ -56,6 +58,9 @@ def update_student_profile(
     student = current_user.student_profile
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
+
+    # Track if skills changed (requires cache regeneration)
+    skills_changed = student_in.skills is not None and student_in.skills != student.skills
 
     # Update fields
     student_data = student_in.model_dump(exclude_unset=True)
@@ -65,6 +70,14 @@ def update_student_profile(
     session.add(student)
     session.commit()
     session.refresh(student)
+    
+    # Regenerate embedding cache if skills changed
+    if skills_changed:
+        try:
+            generate_and_cache_embedding(student, session, force_regenerate=True)
+        except Exception as e:
+            print(f"Failed to regenerate embedding cache: {e}")
+            # Don't fail the request if caching fails
 
     return student
 
@@ -74,48 +87,102 @@ async def upload_resume(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"=== Resume Upload Started for user {current_user.id} ===")
+    
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can upload resumes")
 
     if file.content_type != "application/pdf":
+        logger.error(f"Invalid file type: {file.content_type}")
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     # 1. Read file into memory
+    logger.info("Reading file content...")
     file_content = await file.read()
+    logger.info(f"File size: {len(file_content)} bytes")
     
     # 2. Create path: "user_id/filename.pdf"
     safe_filename = file.filename.replace(" ", "_")
     file_path = f"{current_user.id}/{safe_filename}"
+    logger.info(f"File path: {file_path}")
 
     try:
         # 3. Upload to Supabase Private Bucket
+        logger.info("Uploading to Supabase...")
         supabase.storage.from_("resumes").upload(
             file=file_content, 
             path=file_path, 
             file_options={"content-type": "application/pdf", "upsert": "true"}
         )
+        logger.info("Upload to Supabase successful")
     except Exception as e:
-        print(f"Upload Error: {e}")
+        logger.error(f"Upload Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to upload to cloud storage")
 
-    # 4. Extract text for AI
-    extracted_text = extract_text_from_pdf(file_content)
+    # 4. Extract text for AI (enhanced extraction)
+    logger.info("Extracting text from PDF...")
+    try:
+        extracted_text = extract_text_from_pdf(file_content)
+        logger.info(f"Extracted text length: {len(extracted_text)} characters")
+    except Exception as e:
+        logger.error(f"PDF extraction error: {e}", exc_info=True)
+        extracted_text = ""
 
-    # 5. Update Database with PATH (not URL)
+    # 5. Update student object
+    logger.info("Fetching student profile...")
     student = current_user.student_profile
+    if not student:
+        logger.error("Student profile not found!")
+        raise HTTPException(status_code=404, detail="Student profile not found")
+    
+    logger.info(f"Student ID: {student.id}")
     student.resume_url = file_path
     student.resume_text = extracted_text
+    logger.info("Updated student resume_url and resume_text")
     
-    session.add(student)
-    session.commit()
-    session.refresh(student)
+    # 6. Save to database first (commit resume_url and resume_text)
+    try:
+        logger.info("Adding student to session...")
+        session.add(student)
+        logger.info("Committing to database...")
+        session.commit()
+        logger.info("Refreshing student object...")
+        session.refresh(student)
+        logger.info("Database commit successful")
+    except Exception as e:
+        logger.error(f"Database commit error: {e}", exc_info=True)
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
+    # 7. Force regenerate embedding cache with the new resume (separate transaction)
+    embedding_cached = False
+    try:
+        logger.info("Force regenerating embedding cache with new resume...")
+        generate_and_cache_embedding(student, session, force_regenerate=True)
+        embedding_cached = True
+        logger.info("Embedding cache regenerated successfully")
+    except Exception as e:
+        logger.error(f"Failed to generate embedding: {e}", exc_info=True)
+        # Continue without caching (non-fatal error)
 
-    # 6. Generate Signed URL for immediate response
-    signed_url_response = supabase.storage.from_("resumes").create_signed_url(file_path, 600)
-    final_url = signed_url_response.get("signedURL") if isinstance(signed_url_response, dict) else signed_url_response
+    # 8. Generate Signed URL for immediate response
+    try:
+        logger.info("Generating signed URL...")
+        signed_url_response = supabase.storage.from_("resumes").create_signed_url(file_path, 600)
+        final_url = signed_url_response.get("signedURL") if isinstance(signed_url_response, dict) else signed_url_response
+        logger.info("Signed URL generated")
+    except Exception as e:
+        logger.error(f"Error generating signed URL: {e}", exc_info=True)
+        final_url = file_path
 
+    logger.info("=== Resume Upload Completed Successfully ===")
+    
     return {
         "message": "Resume uploaded successfully", 
         "resume_url": final_url,
-        "text_preview": extracted_text[:100] + "..."
+        "text_preview": extracted_text[:100] + "..." if len(extracted_text) > 100 else extracted_text,
+        "embedding_cached": embedding_cached
     }

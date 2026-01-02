@@ -25,7 +25,7 @@ let myJobsCache = {
 };
 
 const MyJobs = () => {
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
   const [searchQuery, setSearchQuery] = useState("");
@@ -176,19 +176,22 @@ const MyJobs = () => {
   };
 
   // Calculate stats
-  const activeJobs = jobs.filter((job) => job.is_active).length;
-  const totalApplications = jobs.reduce(
+  const activeJobs = (jobs || []).filter((job) => job.is_active).length;
+  const totalApplications = (jobs || []).reduce(
     (sum, job) => sum + (job.applications_count || 0),
     0
   );
-  const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0);
-  const recentApplications = jobs.reduce(
+  const totalViews = (jobs || []).reduce(
+    (sum, job) => sum + (job.views_count || 0),
+    0
+  );
+  const recentApplications = (jobs || []).reduce(
     (sum, job) => sum + (job.recent_applications_count || 0),
     0
   );
 
   // Filter jobs
-  const filteredJobs = jobs.filter((job) => {
+  const filteredJobs = (jobs || []).filter((job) => {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && job.is_active) ||
@@ -203,7 +206,7 @@ const MyJobs = () => {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
       {/* Toast Notifications */}
       <Toaster
         position="top-center"
@@ -231,10 +234,10 @@ const MyJobs = () => {
                 <Briefcase className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-gray-900">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
                   Company Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Manage and track your job postings
                 </p>
               </div>
@@ -290,7 +293,7 @@ const MyJobs = () => {
                       {activeJobs}
                     </div>
                     <div className="text-sm text-white/70">
-                      of {jobs.length} total
+                      of {jobs?.length || 0} total
                     </div>
                   </div>
                 </div>
@@ -354,28 +357,31 @@ const MyJobs = () => {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-gray-100 p-5 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-5 mb-8 relative overflow-hidden">
+          {/* Decorative gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 pointer-events-none" />
+
+          <div className="relative flex flex-col lg:flex-row gap-4">
             <div className="flex-grow relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search your job postings..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition bg-white"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-2xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 shadow-sm"
               />
             </div>
 
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
+            <div className="flex gap-2 bg-gray-100 dark:bg-gray-900/50 p-1 rounded-2xl border border-gray-200 dark:border-gray-700">
               {["all", "active", "inactive"].map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilterStatus(status)}
                   className={`px-4 py-2 rounded-lg font-medium transition capitalize ${
                     filterStatus === status
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   {status}
@@ -394,16 +400,16 @@ const MyJobs = () => {
             </p>
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Briefcase className="w-10 h-10 text-gray-400" />
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <Briefcase className="w-10 h-10 text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
               {searchQuery || filterStatus !== "all"
                 ? "No jobs match your filters"
                 : "You haven't posted any jobs yet"}
             </h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
               {searchQuery || filterStatus !== "all"
                 ? "Try adjusting your search or filter settings."
                 : "Start attracting top talent by posting your first job opportunity."}
@@ -430,14 +436,14 @@ const MyJobs = () => {
                 <div key={job.id} className="h-full">
                   <JobCard job={job} isActive={job.is_active}>
                     {/* Custom footer content for Company Dashboard */}
-                    <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 mt-2">
+                    <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 dark:border-gray-700/60 mt-2">
                       {/* 1. View Applicants (Primary Action) */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent card click
                           handleViewApplicants(job.id);
                         }}
-                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg transition text-sm"
+                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-lg font-bold hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-500/40 transition-all duration-300 text-sm transform hover:scale-[1.02]"
                       >
                         <Users className="w-4 h-4" />
                         View Applicants ({job.applications_count || 0})
@@ -449,7 +455,7 @@ const MyJobs = () => {
                           e.stopPropagation();
                           navigate(`/jobs/${job.id}/edit`);
                         }}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600/40 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600/60 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md dark:hover:shadow-gray-500/10"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit
@@ -461,10 +467,10 @@ const MyJobs = () => {
                           e.stopPropagation();
                           handleToggleStatus(job.id, job.is_active);
                         }}
-                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition text-sm font-medium border ${
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium border shadow-sm hover:shadow-md ${
                           job.is_active
-                            ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
-                            : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                            ? "bg-orange-50 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/60 hover:bg-orange-100 dark:hover:bg-orange-900/50 dark:hover:shadow-orange-500/20"
+                            : "bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/60 hover:bg-green-100 dark:hover:bg-green-900/50 dark:hover:shadow-green-500/20"
                         }`}
                       >
                         {job.is_active ? "Pause" : "Activate"}
@@ -477,7 +483,7 @@ const MyJobs = () => {
                           handleDelete(job.id);
                         }}
                         disabled={deletingId === job.id}
-                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition text-sm font-medium mt-1"
+                        className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800/40 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-all duration-200 text-sm font-medium mt-1 shadow-sm hover:shadow-md dark:hover:shadow-red-500/20"
                       >
                         {deletingId === job.id ? (
                           "Deleting..."

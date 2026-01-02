@@ -135,7 +135,7 @@ const EditJob = () => {
 
   return (
     <motion.main
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4"
       initial="hidden"
       animate="visible"
       variants={stagger}
@@ -145,28 +145,30 @@ const EditJob = () => {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
             <Briefcase className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900">Edit Job</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+            Edit Job
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Update details to keep your listing accurate
           </p>
         </motion.header>
 
         <motion.div
           variants={fadeUp}
-          className="bg-white/80 backdrop-blur rounded-3xl shadow-xl border p-5 md:p-6"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-xl border dark:border-gray-700 p-5 md:p-6"
         >
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 mb-5 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 mb-5 border-b border-gray-100 dark:border-gray-700">
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold text-gray-900 truncate">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
                 {jobData.title || "Untitled job"}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Edit the fields below and save
               </p>
             </div>
 
             <div className="flex items-center gap-3 justify-start sm:justify-end">
-              <label className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200">
+              <label className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600">
                 <input
                   type="checkbox"
                   name="is_active"
@@ -174,7 +176,9 @@ const EditJob = () => {
                   onChange={handleChange}
                   className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
                 />
-                <span className="text-gray-700 font-medium">Active</span>
+                <span className="text-gray-700 dark:text-gray-200 font-medium">
+                  Active
+                </span>
               </label>
             </div>
           </div>
@@ -192,7 +196,7 @@ const EditJob = () => {
                 value={jobData.title}
                 onChange={handleChange}
                 required
-                className="input px-3 py-2.5"
+                className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
 
@@ -207,7 +211,7 @@ const EditJob = () => {
                   name="job_type"
                   value={jobData.job_type}
                   onChange={handleChange}
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 >
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
@@ -226,7 +230,7 @@ const EditJob = () => {
                   name="salary_range"
                   value={jobData.salary_range}
                   onChange={handleChange}
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
             </div>
@@ -244,7 +248,7 @@ const EditJob = () => {
                   value={jobData.location}
                   onChange={handleChange}
                   required
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
 
@@ -259,7 +263,7 @@ const EditJob = () => {
                   value={jobData.max_seats}
                   onChange={handleChange}
                   min="1"
-                  className="input px-3 py-2.5"
+                  className="input px-3 py-2.5 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
             </div>
@@ -277,11 +281,11 @@ const EditJob = () => {
                   name="deadline"
                   value={jobData.deadline}
                   onChange={handleChange}
-                  className="input px-3 py-2.5 text-gray-700"
+                  className="input px-3 py-2.5 text-gray-700 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
 
-              <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-3">
                 Toggle “Active” to hide/show this job listing.
               </div>
             </div>
@@ -295,7 +299,7 @@ const EditJob = () => {
                 onChange={handleChange}
                 required
                 rows={5}
-                className="input px-3 py-2.5 resize-none"
+                className="input px-3 py-2.5 resize-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
               ></textarea>
             </div>
 
@@ -304,7 +308,7 @@ const EditJob = () => {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="btn-secondary py-2.5"
+                className="btn-secondary py-2.5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>

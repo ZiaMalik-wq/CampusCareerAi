@@ -98,6 +98,7 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     
     # 1. Determine the name based on Role
     display_name = None
+    company_profile_id = None
     
     if current_user.role == UserRole.STUDENT:
         # Check if profile exists to avoid crash
@@ -108,11 +109,13 @@ def read_users_me(current_user: User = Depends(get_current_user)):
         if current_user.company_profile:
             # For companies, we use company_name as the full_name
             display_name = current_user.company_profile.company_name
+            company_profile_id = current_user.company_profile.id
 
     # 2. Return the data matching the UserPublic schema
     return UserPublic(
         id=current_user.id,
         email=current_user.email,
         role=current_user.role,
-        full_name=display_name
+        full_name=display_name,
+        company_profile_id=company_profile_id
     )

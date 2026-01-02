@@ -20,7 +20,7 @@ const DesktopNav = ({
       {isCompany && (
         <Link
           to="/post-job"
-          className="ml-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+          className="ml-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all"
         >
           Post Job
         </Link>
@@ -28,12 +28,15 @@ const DesktopNav = ({
 
       {!user && (
         <>
-          <Link to="/login" className="px-4 py-2 text-sm">
+          <Link
+            to="/login"
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
             Login
           </Link>
           <Link
             to="/register"
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all"
           >
             Register
           </Link>

@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import Logo from "./Logo";
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
+import ThemeToggle from "./ThemeToggle";
 import { useNavbarState } from "./useNavbarState";
 
 const Navbar = () => {
@@ -42,26 +43,32 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 bg-white border-b z-50">
+    <nav className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 z-50 transition-colors duration-200">
       <div className="max-w-7xl mx-auto h-16 px-4 flex justify-between items-center">
         <Logo />
 
-        <DesktopNav
-          user={user}
-          loading={loading}
-          isCompany={isCompany}
-          isAdmin={isAdmin}
-          navLinks={navLinks}
-          navbar={navbar}
-          onLogout={handleLogout}
-        />
+        <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
+          <DesktopNav
+            user={user}
+            loading={loading}
+            isCompany={isCompany}
+            isAdmin={isAdmin}
+            navLinks={navLinks}
+            navbar={navbar}
+            onLogout={handleLogout}
+          />
+        </div>
 
-        <button
-          className="md:hidden p-2"
-          onClick={() => navbar.setMobileOpen(!navbar.mobileOpen)}
-        >
-          {navbar.mobileOpen ? <X /> : <Menu />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            className="p-2 dark:text-gray-300"
+            onClick={() => navbar.setMobileOpen(!navbar.mobileOpen)}
+          >
+            {navbar.mobileOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       <MobileNav
