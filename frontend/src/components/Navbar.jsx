@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
-import Logo from "./logo";
+import Logo from "./Logo";
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
 import { useNavbarState } from "./useNavbarState";
