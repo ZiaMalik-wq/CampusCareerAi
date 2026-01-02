@@ -17,6 +17,7 @@ import JobApplicants from "./pages/JobApplicants";
 import InterviewPrep from "./pages/InterviewPrep";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import SavedJobs from "./pages/SavedJobs";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -39,6 +40,7 @@ function App() {
             <Route path="/jobs/:id/edit" element={<EditJob />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/recommendations" element={<RecommendedJobs />} />
+            <Route path="/saved-jobs" element={<SavedJobs />} />
             <Route path="/my-applications" element={<MyApplications />} />
             <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
             <Route

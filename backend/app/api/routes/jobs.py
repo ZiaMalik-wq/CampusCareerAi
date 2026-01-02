@@ -431,14 +431,23 @@ def get_saved_jobs(
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students have saved jobs")
     
-    statement = (
-        select(Job)
-        .join(SavedJob, Job.id == SavedJob.job_id)
+    # First get all saved job records for this user
+    saved_records = session.exec(
+        select(SavedJob)
         .where(SavedJob.user_id == current_user.id)
         .order_by(SavedJob.saved_at.desc())
-    )
+    ).all()
     
-    jobs = session.exec(statement).all()
+    # Extract job IDs
+    job_ids = [record.job_id for record in saved_records]
+    
+    if not job_ids:
+        return []
+    
+    # Fetch the actual job objects
+    jobs = session.exec(
+        select(Job).where(Job.id.in_(job_ids))
+    ).all()
     
     public_jobs = []
     for job in jobs:
