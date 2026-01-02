@@ -1,9 +1,9 @@
 import React, { createContext, useState, useEffect } from "react";
 import api from "../services/api";
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
