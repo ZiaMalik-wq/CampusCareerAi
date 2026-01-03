@@ -6,7 +6,7 @@ Campus Career AI is an intelligent recruitment platform built for university stu
 
 ## Live Demo
 
-Try the live application here: https://campus-career-ai.vercel.app/
+Try the live application here: https://www.campuscareerai.me/
 
 ---
 
