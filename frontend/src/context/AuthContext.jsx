@@ -32,6 +32,12 @@ export const AuthProvider = ({ children }) => {
       });
 
       setUser(response.data);
+
+      // Set profile image from /auth/me response immediately
+      if (response.data.profile_image_url) {
+        updateProfileImage(response.data.profile_image_url);
+      }
+
       return response.data;
     } catch (error) {
       console.error("Token invalid or expired", error);
@@ -94,9 +100,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", access_token);
 
       const userData = await fetchCurrentUser(access_token);
-
-      // Fetch profile image after login
-      await fetchProfileImage(userData);
 
       return userData; //explicit success signal
     } catch (error) {

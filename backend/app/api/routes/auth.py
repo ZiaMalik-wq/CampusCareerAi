@@ -93,23 +93,47 @@ def login_for_access_token(
 @router.get("/me", response_model=UserPublic)
 def read_users_me(current_user: User = Depends(get_current_user)):
     """
-    Get current user details with their name.
+    Get current user details with their name and profile image.
     """
+    from app.core.supabase import supabase
     
-    # 1. Determine the name based on Role
+    # 1. Determine the name and profile image based on Role
     display_name = None
     company_profile_id = None
+    profile_image_url = None
     
     if current_user.role == UserRole.STUDENT:
         # Check if profile exists to avoid crash
         if current_user.student_profile:
             display_name = current_user.student_profile.full_name
+            # Get profile image URL
+            if current_user.student_profile.profile_image_url:
+                try:
+                    path = current_user.student_profile.profile_image_url
+                    res = supabase.storage.from_("profile-images").create_signed_url(path, 3600)
+                    if isinstance(res, dict) and "signedURL" in res:
+                        profile_image_url = res["signedURL"]
+                    elif isinstance(res, str):
+                        profile_image_url = res
+                except Exception as e:
+                    print(f"Error generating profile image signed URL: {e}")
             
     elif current_user.role == UserRole.COMPANY:
         if current_user.company_profile:
             # For companies, we use company_name as the full_name
             display_name = current_user.company_profile.company_name
             company_profile_id = current_user.company_profile.id
+            # Get profile image URL
+            if current_user.company_profile.profile_image_url:
+                try:
+                    path = current_user.company_profile.profile_image_url
+                    res = supabase.storage.from_("profile-images").create_signed_url(path, 3600)
+                    if isinstance(res, dict) and "signedURL" in res:
+                        profile_image_url = res["signedURL"]
+                    elif isinstance(res, str):
+                        profile_image_url = res
+                except Exception as e:
+                    print(f"Error generating profile image signed URL: {e}")
 
     # 2. Return the data matching the UserPublic schema
     return UserPublic(
@@ -117,5 +141,6 @@ def read_users_me(current_user: User = Depends(get_current_user)):
         email=current_user.email,
         role=current_user.role,
         full_name=display_name,
-        company_profile_id=company_profile_id
+        company_profile_id=company_profile_id,
+        profile_image_url=profile_image_url
     )
