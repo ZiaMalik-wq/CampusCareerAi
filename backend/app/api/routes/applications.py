@@ -1,4 +1,6 @@
 from datetime import datetime
+import asyncio
+from typing import Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from app.db.session import get_session
@@ -11,6 +13,49 @@ from app.models.auth import Company, Student
 from app.core.supabase import supabase
 
 router = APIRouter()
+
+
+def _create_signed_url(bucket: str, path: str) -> Optional[str]:
+    """Helper to create a signed URL for a file in Supabase storage."""
+    if not path:
+        return None
+    try:
+        res = supabase.storage.from_(bucket).create_signed_url(path, 3600)
+        return res.get("signedURL") if isinstance(res, dict) else res
+    except Exception:
+        return None
+
+
+async def _create_signed_url_async(bucket: str, path: str) -> Optional[str]:
+    """Async wrapper for creating signed URLs - runs in thread pool."""
+    if not path:
+        return None
+    return await asyncio.to_thread(_create_signed_url, bucket, path)
+
+
+async def _batch_create_signed_urls(
+    items: list[Tuple[Optional[str], Optional[str]]]
+) -> list[Tuple[Optional[str], Optional[str]]]:
+    """
+    Batch create signed URLs for multiple items concurrently.
+    Each item is a tuple of (resume_path, profile_image_path).
+    Returns list of tuples (resume_signed_url, profile_image_signed_url).
+    """
+    tasks = []
+    for resume_path, profile_path in items:
+        # Create tasks for both resume and profile image URLs
+        tasks.append(_create_signed_url_async("resumes", resume_path))
+        tasks.append(_create_signed_url_async("profile-images", profile_path))
+    
+    # Run all tasks concurrently
+    results = await asyncio.gather(*tasks)
+    
+    # Pair up results (every 2 results belong to one applicant)
+    paired_results = []
+    for i in range(0, len(results), 2):
+        paired_results.append((results[i], results[i + 1]))
+    
+    return paired_results
 
 @router.post("/{job_id}", response_model=ApplicationPublic)
 def apply_to_job(
@@ -119,7 +164,7 @@ def get_my_applications(
 
 
 @router.get("/job/{job_id}", response_model=list[ApplicantPublic])
-def get_job_applicants(
+async def get_job_applicants(
     job_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
@@ -127,6 +172,7 @@ def get_job_applicants(
     """
     Company: View all students who applied to a specific job.
     Includes logic to generate secure Resume Links.
+    Uses batched async calls for Supabase signed URLs for better performance.
     """
     # 1. Security: Only Companies allowed
     if current_user.role != UserRole.COMPANY or not current_user.company_profile:
@@ -151,30 +197,24 @@ def get_job_applicants(
     
     results = session.exec(statement).all()
     
-    # 4. Format Data & Sign Resume URLs
+    if not results:
+        return []
+    
+    # 4. Batch create signed URLs for all applicants concurrently
+    # Collect all paths that need signing
+    url_paths = [
+        (student.resume_url, student.profile_image_url)
+        for _, student, _ in results
+    ]
+    
+    # Generate all signed URLs in parallel
+    signed_urls = await _batch_create_signed_urls(url_paths)
+    
+    # 5. Format Data with signed URLs
     applicants_list = []
-    for application, student, user in results:
+    for i, (application, student, user) in enumerate(results):
+        secure_resume_link, secure_profile_image_link = signed_urls[i]
         
-        # Generate Signed URL for Resume (Valid for 1 hour)
-        secure_resume_link = None
-        if student.resume_url:
-            try:
-                path = student.resume_url
-                res = supabase.storage.from_("resumes").create_signed_url(path, 3600)
-                secure_resume_link = res.get("signedURL") if isinstance(res, dict) else res
-            except Exception:
-                secure_resume_link = None
-
-        # Generate Signed URL for Profile Image (Valid for 1 hour)
-        secure_profile_image_link = None
-        if student.profile_image_url:
-            try:
-                path = student.profile_image_url
-                res = supabase.storage.from_("profile-images").create_signed_url(path, 3600)
-                secure_profile_image_link = res.get("signedURL") if isinstance(res, dict) else res
-            except Exception:
-                secure_profile_image_link = None
-
         applicant_data = ApplicantPublic(
             application_id=application.id,
             student_id=student.id,
@@ -194,6 +234,27 @@ def get_job_applicants(
 
 
 from app.schemas import ApplicationUpdate # Add this import
+from app.models.notification import Notification, NotificationType
+
+# Status change messages for notifications
+STATUS_MESSAGES = {
+    ApplicationStatus.SHORTLISTED: {
+        "title": "🎉 You've been shortlisted!",
+        "message": "Great news! Your application for {job_title} at {company_name} has been shortlisted. You're one step closer!"
+    },
+    ApplicationStatus.INTERVIEW: {
+        "title": "📅 Interview Scheduled",
+        "message": "Exciting! {company_name} wants to interview you for the {job_title} position. Check your email for details."
+    },
+    ApplicationStatus.HIRED: {
+        "title": "🎊 Congratulations! You're Hired!",
+        "message": "Amazing news! You've been hired for {job_title} at {company_name}. Your hard work paid off!"
+    },
+    ApplicationStatus.REJECTED: {
+        "title": "Application Update",
+        "message": "Thank you for your interest in {job_title} at {company_name}. Unfortunately, they've decided to proceed with other candidates. Keep applying!"
+    }
+}
 
 @router.patch("/{application_id}/status", response_model=ApplicationPublic)
 def update_application_status(
@@ -205,6 +266,7 @@ def update_application_status(
     """
     Company updates application status (Shortlisted, Rejected, Hired).
     If HIRED -> Decrement job max_seats.
+    Creates a notification for the student.
     """
     # 1. Fetch Application
     application = session.get(Application, application_id)
@@ -223,9 +285,13 @@ def update_application_status(
     if job.company_id != current_user.company_profile.id:
         raise HTTPException(status_code=403, detail="You do not own this job")
 
+    # Store old status to check if it changed
+    old_status = application.status
+    new_status = status_update.status
+
     # 4. Handle HIRED Logic (Seat Decrement)
     # If moving TO Hired status FROM something else
-    if status_update.status == ApplicationStatus.HIRED and application.status != ApplicationStatus.HIRED:
+    if new_status == ApplicationStatus.HIRED and old_status != ApplicationStatus.HIRED:
         if job.max_seats > 0:
             job.max_seats -= 1
             session.add(job)
@@ -234,18 +300,38 @@ def update_application_status(
 
     # 5. Handle UN-HIRED Logic (Seat Increment) - Optional safety
     # If they were hired by mistake and we change it back to Applied/Rejected
-    if application.status == ApplicationStatus.HIRED and status_update.status != ApplicationStatus.HIRED:
+    if old_status == ApplicationStatus.HIRED and new_status != ApplicationStatus.HIRED:
         job.max_seats += 1
         session.add(job)
 
     # 6. Update Status
-    application.status = status_update.status.lower() 
+    application.status = new_status
     session.add(application)
+    
+    # 7. Create Notification if status changed and it's a meaningful update
+    if old_status != new_status and new_status in STATUS_MESSAGES:
+        # Get the student's user_id
+        student = session.get(Student, application.student_id)
+        if student:
+            msg_template = STATUS_MESSAGES[new_status]
+            company_name = current_user.company_profile.company_name
+            
+            notification = Notification(
+                user_id=student.user_id,
+                type=NotificationType.APPLICATION_STATUS,
+                title=msg_template["title"],
+                message=msg_template["message"].format(
+                    job_title=job.title,
+                    company_name=company_name
+                ),
+                link="/my-applications"
+            )
+            session.add(notification)
+    
     session.commit()
     session.refresh(application)
 
-    # 7. Return with Job/Company details for Schema compliance
-    # (Since ApplicationPublic requires these fields)
+    # 8. Return with Job/Company details for Schema compliance
     return ApplicationPublic(
         id=application.id,
         job_id=application.job_id,

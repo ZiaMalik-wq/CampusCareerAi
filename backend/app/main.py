@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import check_db_connection
 from app.core.vector_db import vector_db 
-from app.api.routes import auth, jobs, chat, students, companies, applications, analytics, admin
+from app.api.routes import auth, jobs, chat, students, companies, applications, analytics, admin, notifications
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -77,6 +77,7 @@ app.include_router(companies.router, prefix="/companies", tags=["Companies"])
 app.include_router(applications.router, prefix="/applications", tags=["Applications"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin Panel"])
+app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 
 # 7. Root Endpoints
 # Allow HEAD for Render Health Checks

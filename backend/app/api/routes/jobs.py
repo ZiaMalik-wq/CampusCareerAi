@@ -5,11 +5,11 @@ from sqlmodel import Session, func, select
 from app.db.session import get_session
 from app.models.auth import User, UserRole
 from app.models.job import Job, JobView, SavedJob
-from app.schemas import JobCreate, JobPublic, JobUpdate, JobRecommendation
+from app.schemas import JobCreate, JobPublic, JobUpdate, JobRecommendation, CoverLetterRequest, CoverLetterResponse, SkillGapAnalysisResponse
 from app.api.deps import get_current_user, get_optional_user
 from app.core.ai import ai_model
 from app.core.vector_db import vector_db
-from app.core.llm import generate_interview_questions 
+from app.core.llm import generate_interview_questions, generate_interview_questions_async, generate_cover_letter_async, generate_skill_gap_analysis_async
 from app.core.skill_matcher import (
     match_skills,
     calculate_skill_match_score,
@@ -682,6 +682,9 @@ def read_job_by_id(
         job_data["company_name"] = job.company.company_name
         job_data["company_location"] = job.company.location
         job_data["is_saved"] = check_is_saved(session, current_user, job.id)
+        # Get company email from the associated user
+        if job.company.user:
+            job_data["company_email"] = job.company.user.email
         
     return JobPublic(**job_data)
 
@@ -849,13 +852,14 @@ def unsave_job(
     return {"message": "Job removed from saved list"}
 
 @router.post("/{job_id}/interview-prep")
-def get_interview_prep(
+async def get_interview_prep(
     job_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
     """
     Generates AI-powered interview questions tailored to the student and job.
+    Uses async LLM calls to avoid blocking the event loop.
     """
     # 1. Security Check
     if current_user.role != UserRole.STUDENT:
@@ -874,14 +878,110 @@ def get_interview_prep(
             detail="Please upload your resume first so the AI can analyze it."
         )
 
-    # 4. Generate AI Content
+    # 4. Generate AI Content (async - non-blocking)
     # We assume 'student.skills' is useful context too
     resume_context = f"Skills: {student.skills}. \nExperience: {student.resume_text}"
     
-    ai_result = generate_interview_questions(
+    ai_result = await generate_interview_questions_async(
         job_title=job.title,
         job_desc=job.description,
         student_resume=resume_context
     )
     
     return ai_result
+
+
+@router.post("/{job_id}/cover-letter", response_model=CoverLetterResponse)
+async def generate_cover_letter(
+    job_id: int,
+    request: CoverLetterRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generates an AI-powered personalized cover letter for a specific job.
+    Uses the student's profile and resume to create a tailored letter.
+    """
+    # 1. Security Check
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students can generate cover letters")
+
+    # 2. Fetch Job with Company info
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Get company name
+    company_name = job.company.company_name if job.company else "the company"
+
+    # 3. Fetch Student Data
+    student = current_user.student_profile
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+    
+    if not student.resume_text and not student.skills:
+        raise HTTPException(
+            status_code=400, 
+            detail="Please complete your profile or upload your resume first."
+        )
+
+    # 4. Generate Cover Letter (async - non-blocking)
+    cover_letter_result = await generate_cover_letter_async(
+        job_title=job.title,
+        company_name=company_name,
+        job_desc=job.description,
+        student_name=student.full_name or "Applicant",
+        student_skills=student.skills or "",
+        student_resume=student.resume_text or "",
+        student_university=student.university,
+        tone=request.tone or "professional"
+    )
+    
+    return cover_letter_result
+
+
+@router.get("/{job_id}/skill-gap", response_model=SkillGapAnalysisResponse)
+async def analyze_skill_gap(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Analyzes the skill gap between a job's requirements and the student's profile.
+    Returns matched skills, skill gaps, and personalized learning paths.
+    
+    This feature helps students:
+    - Understand which skills they already have
+    - Identify skills they need to develop
+    - Get curated learning resources for each gap
+    - Estimate time needed to become competitive
+    """
+    # 1. Security Check
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students can analyze skill gaps")
+
+    # 2. Fetch Job
+    job = session.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # 3. Fetch Student Data
+    student = current_user.student_profile
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+    
+    if not student.resume_text and not student.skills:
+        raise HTTPException(
+            status_code=400, 
+            detail="Please complete your profile or upload your resume first to analyze skill gaps."
+        )
+
+    # 4. Generate Skill Gap Analysis (async - non-blocking)
+    skill_gap_result = await generate_skill_gap_analysis_async(
+        job_title=job.title,
+        job_desc=job.description,
+        student_skills=student.skills or "",
+        student_resume=student.resume_text or ""
+    )
+    
+    return skill_gap_result

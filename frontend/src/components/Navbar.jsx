@@ -16,6 +16,7 @@ import Logo from "./Logo";
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
 import ThemeToggle from "./ThemeToggle";
+import NotificationBell from "./NotificationBell";
 import { useNavbarState } from "./useNavbarState";
 
 const Navbar = () => {
@@ -59,6 +60,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
+          {user && !isAdmin && <NotificationBell />}
           <DesktopNav
             user={user}
             loading={loading}
@@ -73,6 +75,7 @@ const Navbar = () => {
 
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
+          {user && !isAdmin && <NotificationBell />}
           {user && !isAdmin && (
             <Link
               to="/profile"

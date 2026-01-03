@@ -56,6 +56,7 @@ class JobPublic(JobCreate):
     company_id: int
     company_name: Optional[str] = None
     company_location: Optional[str] = None
+    company_email: Optional[str] = None
     match_score: Optional[float] = None
     created_at: datetime
     is_active: bool
@@ -188,3 +189,56 @@ class StudentAnalytics(BaseModel):
     total_applications: int
     application_status: List[StatItem]
     market_trends: List[StatItem]
+
+
+# --- Cover Letter Schemas ---
+class CoverLetterRequest(BaseModel):
+    job_id: int
+    tone: Optional[Literal["professional", "enthusiastic", "confident"]] = "professional"
+
+class CoverLetterResponse(BaseModel):
+    cover_letter: str
+    key_highlights: List[str]
+    word_count: int
+
+
+# --- Skill Gap Analysis Schemas ---
+class LearningResource(BaseModel):
+    name: str
+    type: Literal["course", "tutorial", "documentation", "project", "book"]
+    url: Optional[str] = None
+    estimated_time: str  # e.g., "2 hours", "1 week"
+    difficulty: Literal["beginner", "intermediate", "advanced"]
+
+class SkillGap(BaseModel):
+    skill: str
+    importance: Literal["critical", "important", "nice-to-have"]
+    current_level: Literal["missing", "basic", "intermediate"]
+    target_level: str
+    learning_path: List[LearningResource]
+
+class SkillGapAnalysisResponse(BaseModel):
+    matched_skills: List[str]
+    skill_gaps: List[SkillGap]
+    overall_match_percentage: int
+    priority_recommendation: str
+    estimated_learning_time: str
+
+
+# --- Notification Schemas ---
+class NotificationPublic(BaseModel):
+    id: int
+    type: str
+    title: str
+    message: str
+    link: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+
+class NotificationList(BaseModel):
+    notifications: List[NotificationPublic]
+    unread_count: int
+    total_count: int
+
+class NotificationMarkRead(BaseModel):
+    notification_ids: List[int]
