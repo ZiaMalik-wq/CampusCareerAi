@@ -17,7 +17,7 @@ import {
   Calendar,
   Lock, // Added Lock icon
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -73,7 +73,7 @@ const JobDetails = () => {
 
   const handleApply = async () => {
     if (!user) {
-      toast.error("Please login to apply!");
+      toast.error("Please login to apply!", { duration: 3000 });
       navigate("/login");
       return;
     }
@@ -90,6 +90,7 @@ const JobDetails = () => {
 
       toast.success("Application submitted successfully!", {
         id: loadingToast,
+        duration: 3000,
       });
 
       // Optional: Redirect to My Applications page
@@ -97,7 +98,7 @@ const JobDetails = () => {
     } catch (error) {
       console.error("Apply Error:", error);
       const errorMsg = error.response?.data?.detail || "Failed to apply.";
-      toast.error(errorMsg, { id: loadingToast });
+      toast.error(errorMsg, { id: loadingToast, duration: 4000 });
     }
   };
 
@@ -144,8 +145,6 @@ const JobDetails = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-8 md:py-12 px-4">
-      <Toaster position="top-center" />
-
       <div className="container mx-auto max-w-6xl">
         <button
           onClick={() => navigate(-1)}

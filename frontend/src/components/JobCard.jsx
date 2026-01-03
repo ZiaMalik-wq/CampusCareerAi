@@ -28,7 +28,7 @@ const JobCard = ({ job, children, isActive }) => {
     e.stopPropagation();
 
     if (!user) {
-      toast.error("Please login to save jobs");
+      toast.error("Please login to save jobs", { duration: 3000 });
       return;
     }
 
@@ -40,11 +40,11 @@ const JobCard = ({ job, children, isActive }) => {
       prev
         ? await api.delete(`/jobs/${job.id}/save`)
         : await api.post(`/jobs/${job.id}/save`);
-      if (!prev) toast.success("Job saved!");
-      else toast.success("Job removed from saved");
+      if (!prev) toast.success("Job saved!", { duration: 2000 });
+      else toast.success("Job removed from saved", { duration: 2000 });
     } catch {
       setIsSaved(prev);
-      toast.error("Failed to update bookmark");
+      toast.error("Failed to update bookmark", { duration: 3000 });
     } finally {
       setLoadingSave(false);
     }

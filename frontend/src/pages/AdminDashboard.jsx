@@ -12,7 +12,7 @@ import {
   Building2,
   GraduationCap,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
@@ -67,7 +67,7 @@ const AdminDashboard = () => {
         const message =
           error?.response?.data?.detail || "Failed to load admin data";
         setError(message);
-        toast.error(message);
+        toast.error(message, { duration: 4000 });
       } finally {
         setLoading(false);
       }
@@ -88,12 +88,14 @@ const AdminDashboard = () => {
 
     try {
       await api.delete(`/admin/users/${userId}`);
-      toast.success("User deleted successfully");
+      toast.success("User deleted successfully", { duration: 3000 });
       // Remove from UI
       setUsers((prev) => prev.filter((u) => u.id !== userId));
     } catch (error) {
       console.error("Delete Error:", error);
-      toast.error(error.response?.data?.detail || "Failed to delete user");
+      toast.error(error.response?.data?.detail || "Failed to delete user", {
+        duration: 4000,
+      });
     }
   };
 
@@ -107,11 +109,11 @@ const AdminDashboard = () => {
   const getRoleBadge = (role) => {
     switch (role.toLowerCase()) {
       case "admin":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
       case "company":
-        return "bg-purple-100 text-purple-700 border-purple-200";
+        return "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800";
       default:
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800";
     }
   };
 
@@ -149,9 +151,7 @@ const AdminDashboard = () => {
     );
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 py-6 px-4">
-      <Toaster position="top-center" />
-
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="mb-6">
@@ -160,10 +160,10 @@ const AdminDashboard = () => {
               <Shield className="w-7 h-7 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                 Admin Portal
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 System overview and user moderation.
               </p>
             </div>
@@ -171,11 +171,13 @@ const AdminDashboard = () => {
         </header>
 
         {error && (
-          <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-gray-100 p-5 mb-6">
-            <p className="text-sm font-semibold text-gray-900">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-6">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
               Failed to load
             </p>
-            <p className="text-sm text-gray-600 mt-1">{error}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {error}
+            </p>
           </div>
         )}
 
@@ -210,9 +212,11 @@ const AdminDashboard = () => {
         )}
 
         {/* User Management */}
-        <div className="bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h2 className="text-xl font-bold text-gray-900">User Management</h2>
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              User Management
+            </h2>
 
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -221,37 +225,42 @@ const AdminDashboard = () => {
                 placeholder="Search email or role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-red-500 focus:outline-none text-sm bg-white"
+                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-red-500 focus:outline-none text-sm bg-white dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-gray-50/80 border-b border-gray-100">
+              <thead className="bg-gray-50/80 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                     Email
                   </th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                     Role
                   </th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase text-right">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-sm text-gray-500">#{u.id}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <tr
+                    key={u.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      #{u.id}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                       {u.email}
                     </td>
                     <td className="px-6 py-4">
@@ -265,18 +274,20 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       {u.is_active ? (
-                        <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs font-medium">
                           <CheckCircle className="w-3 h-3" /> Active
                         </span>
                       ) : (
-                        <span className="text-red-500 text-xs">Inactive</span>
+                        <span className="text-red-500 dark:text-red-400 text-xs">
+                          Inactive
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       {u.role.toLowerCase() !== "admin" && (
                         <button
                           onClick={() => handleDeleteUser(u.id)}
-                          className="text-gray-400 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"
+                          className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
                           title="Ban User"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -290,7 +301,9 @@ const AdminDashboard = () => {
           </div>
 
           {filteredUsers.length === 0 && (
-            <div className="p-8 text-center text-gray-500">No users found.</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              No users found.
+            </div>
           )}
         </div>
       </div>
@@ -300,14 +313,16 @@ const AdminDashboard = () => {
 
 // Helper Component
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white/80 backdrop-blur p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
     <div>
-      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
         {title}
       </p>
-      <h3 className="text-2xl font-bold text-gray-900 mt-1">{value}</h3>
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+        {value}
+      </h3>
     </div>
-    <div className={`p-3 rounded-2xl ${color}`}>{icon}</div>
+    <div className={`p-3 rounded-2xl ${color} dark:bg-opacity-20`}>{icon}</div>
   </div>
 );
 

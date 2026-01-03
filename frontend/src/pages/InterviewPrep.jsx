@@ -14,7 +14,7 @@ import {
   ChevronUp,
   AlertCircle,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const InterviewPrep = () => {
   const { id } = useParams(); // Job ID
@@ -52,7 +52,7 @@ const InterviewPrep = () => {
         const msg =
           err.response?.data?.detail || "Failed to generate interview prep.";
         setError(msg);
-        toast.error(msg);
+        toast.error(msg, { duration: 4000 });
       } finally {
         setLoading(false);
       }
@@ -69,13 +69,13 @@ const InterviewPrep = () => {
   const getDifficultyColor = (level) => {
     switch (level?.toLowerCase()) {
       case "easy":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
       case "medium":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
+        return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
       case "hard":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
     }
   };
 
@@ -137,7 +137,6 @@ const InterviewPrep = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
-      <Toaster position="top-center" />
       <div className="container mx-auto max-w-4xl">
         {/* HEADER */}
         <button
@@ -152,10 +151,10 @@ const InterviewPrep = () => {
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Interview Prep Plan
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               AI-generated questions based on your skill gaps.
             </p>
           </div>
@@ -178,8 +177,8 @@ const InterviewPrep = () => {
 
         {/* 2. TECHNICAL QUESTIONS */}
         <div className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Brain className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             Technical & Skill Gap Questions
           </h2>
 
@@ -187,15 +186,15 @@ const InterviewPrep = () => {
             {prepData?.technical_questions.map((q, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
               >
                 {/* Question Header (Clickable) */}
                 <div
                   onClick={() => toggleAnswer(idx)}
-                  className="p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50"
+                  className="p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   <div className="flex-1 pr-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                       {q.question}
                     </h3>
                   </div>
@@ -208,9 +207,9 @@ const InterviewPrep = () => {
                       {q.difficulty}
                     </span>
                     {expandedIndex === idx ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                      <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     )}
                   </div>
                 </div>
@@ -218,8 +217,8 @@ const InterviewPrep = () => {
                 {/* Answer Key (Accordion) */}
                 {expandedIndex === idx && (
                   <div className="px-5 pb-5 pt-0 animate-in slide-in-from-top-2 duration-200">
-                    <div className="mt-3 p-4 bg-purple-50 rounded-lg border border-purple-100">
-                      <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <div className="mt-3 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-100 dark:border-purple-800">
+                      <h4 className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Key Talking Points
                       </h4>
                       <ul className="space-y-2">
@@ -229,7 +228,7 @@ const InterviewPrep = () => {
                           .map((point, i) => (
                             <li
                               key={i}
-                              className="text-gray-700 text-sm flex items-start gap-2"
+                              className="text-gray-700 dark:text-gray-300 text-sm flex items-start gap-2"
                             >
                               <span className="mt-1.5 w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0"></span>
                               {point.trim()}
@@ -246,8 +245,8 @@ const InterviewPrep = () => {
 
         {/* 3. BEHAVIORAL QUESTIONS */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <User className="w-6 h-6 text-blue-600" />{" "}
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />{" "}
             {/* Reusing User Icon logic or import it */}
             Behavioral Questions
           </h2>
@@ -256,14 +255,14 @@ const InterviewPrep = () => {
             {prepData?.behavioral_questions.map((q, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full"
               >
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
                   {q.question}
                 </h3>
 
-                <div className="mt-auto pt-4 border-t border-gray-100">
-                  <div className="flex items-start gap-2 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
+                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-start gap-2 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
                     <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <p className="italic">{q.tip}</p>
                   </div>

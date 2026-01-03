@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import JobCard from "../components/JobCard";
 import { AuthContext } from "../context/AuthContext";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   PlusCircle,
   Briefcase,
@@ -24,16 +24,33 @@ let myJobsCache = {
   jobs: null,
 };
 
+// Helper to check if cache is valid
+const isCacheValid = (userKey) => {
+  const now = Date.now();
+  return (
+    myJobsCache.jobs &&
+    myJobsCache.userKey === userKey &&
+    now - myJobsCache.fetchedAt < MY_JOBS_CACHE_TTL_MS
+  );
+};
+
 const MyJobs = () => {
-  const [jobs, setJobs] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
-  const [searchQuery, setSearchQuery] = useState("");
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [deletingId, setDeletingId] = useState(null);
 
   const userKey = user?.id || user?.email || "anonymous";
+
+  // Initialize from cache if valid to prevent flash of empty content
+  const [jobs, setJobs] = useState(() => {
+    if (isCacheValid(userKey)) {
+      return myJobsCache.jobs;
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => !isCacheValid(userKey));
+  const [filterStatus, setFilterStatus] = useState("all"); // all, active, inactive
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -47,13 +64,8 @@ const MyJobs = () => {
       return;
     }
 
-    const now = Date.now();
-    const cacheIsValid =
-      myJobsCache.jobs &&
-      myJobsCache.userKey === userKey &&
-      now - myJobsCache.fetchedAt < MY_JOBS_CACHE_TTL_MS;
-
-    if (cacheIsValid) {
+    // Check cache again in case userKey changed
+    if (isCacheValid(userKey)) {
       setJobs(myJobsCache.jobs);
       setLoading(false);
       return;
@@ -207,24 +219,6 @@ const MyJobs = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
-      {/* Toast Notifications */}
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          success: {
-            style: { background: "#10b981", color: "#fff" },
-            iconTheme: { primary: "#fff", secondary: "#10b981" },
-          },
-          error: {
-            style: { background: "#ef4444", color: "#fff" },
-            iconTheme: { primary: "#fff", secondary: "#ef4444" },
-          },
-          loading: {
-            style: { background: "#3b82f6", color: "#fff" },
-          },
-        }}
-      />
-
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">

@@ -77,7 +77,7 @@ const EditJob = () => {
         });
       } catch (err) {
         console.error("Error fetching job:", err);
-        toast.error("Could not load job details.");
+        toast.error("Could not load job details.", { duration: 4000 });
         navigate("/my-jobs");
       } finally {
         setLoading(false);
@@ -107,7 +107,7 @@ const EditJob = () => {
 
       await api.put(`/jobs/${id}`, payload);
 
-      toast.success("Job updated successfully!");
+      toast.success("Job updated successfully!", { duration: 3000 });
 
       setTimeout(() => {
         navigate(`/jobs/${id}`);
@@ -115,7 +115,7 @@ const EditJob = () => {
     } catch (error) {
       console.error("Update Error:", error);
       const errorMsg = error.response?.data?.detail || "Failed to update job.";
-      toast.error(errorMsg);
+      toast.error(errorMsg, { duration: 4000 });
     } finally {
       setSaving(false);
     }

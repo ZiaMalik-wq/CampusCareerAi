@@ -159,12 +159,21 @@ def get_job_applicants(
         secure_resume_link = None
         if student.resume_url:
             try:
-                # Assuming student.resume_url stores the path "5/cv.pdf"
                 path = student.resume_url
                 res = supabase.storage.from_("resumes").create_signed_url(path, 3600)
                 secure_resume_link = res.get("signedURL") if isinstance(res, dict) else res
             except Exception:
                 secure_resume_link = None
+
+        # Generate Signed URL for Profile Image (Valid for 1 hour)
+        secure_profile_image_link = None
+        if student.profile_image_url:
+            try:
+                path = student.profile_image_url
+                res = supabase.storage.from_("profile-images").create_signed_url(path, 3600)
+                secure_profile_image_link = res.get("signedURL") if isinstance(res, dict) else res
+            except Exception:
+                secure_profile_image_link = None
 
         applicant_data = ApplicantPublic(
             application_id=application.id,
@@ -175,6 +184,7 @@ def get_job_applicants(
             cgpa=student.cgpa,
             skills=student.skills,
             resume_url=secure_resume_link,
+            profile_image_url=secure_profile_image_link,
             status=application.status,
             applied_at=application.applied_at
         )

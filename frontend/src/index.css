@@ -24,6 +24,27 @@
         font-feature-settings: "liga" 1, "calt" 1;
     }
 
+    /* Fix browser autofill background color */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px white inset !important;
+        -webkit-text-fill-color: #111827 !important;
+        caret-color: #111827 !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* Dark mode autofill fix */
+    .dark input:-webkit-autofill,
+    .dark input:-webkit-autofill:hover,
+    .dark input:-webkit-autofill:focus,
+    .dark input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px #374151 inset !important;
+        -webkit-text-fill-color: #fff !important;
+        caret-color: #fff !important;
+    }
+
     /* Improved heading styles */
     h1,
     h2,

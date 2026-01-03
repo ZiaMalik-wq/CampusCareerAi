@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -12,7 +12,8 @@ import {
   Building2,
   MapPin,
   Globe,
-  Sparkles,
+  Camera,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -28,11 +29,17 @@ const Skeleton = ({ className }) => (
 );
 
 const Profile = () => {
-  const { user, loading: authLoading } = useContext(AuthContext);
+  const {
+    user,
+    loading: authLoading,
+    updateProfileImage,
+  } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [_resumeLoading, setResumeLoading] = useState(false);
+  const [profileImageLoading, setProfileImageLoading] = useState(false);
+  const profileImageInputRef = useRef(null);
 
   const [studentData, setStudentData] = useState({
     full_name: "",
@@ -53,6 +60,7 @@ const Profile = () => {
 
   const [_resumeFile, setResumeFile] = useState(null);
   const [existingResume, setExistingResume] = useState(null);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
 
   const roleKey = useMemo(() => {
     if (!user?.role) return "";
@@ -101,6 +109,7 @@ const Profile = () => {
           setExistingResume(
             res.data.resume_url || res.data.resume_filename || null
           );
+          setProfileImageUrl(res.data.profile_image_url || null);
 
           if (!initialStudentData) setInitialStudentData(data);
         }
@@ -109,12 +118,13 @@ const Profile = () => {
           const res = await api.get("/companies/profile");
           setCompanyData(res.data);
           setInitialCompanyData(res.data);
+          setProfileImageUrl(res.data.profile_image_url || null);
 
           if (!initialCompanyData) setInitialCompanyData(res.data);
         }
       } catch (err) {
         const message = err?.response?.data?.detail || "Failed to load profile";
-        toast.error(message);
+        toast.error(message, { duration: 4000 });
       } finally {
         setProfileLoading(false);
       }
@@ -188,7 +198,7 @@ const Profile = () => {
     if (!file) return;
 
     if (file.type !== "application/pdf") {
-      toast.error("Only PDF files allowed");
+      toast.error("Only PDF files allowed", { duration: 3000 });
       return;
     }
 
@@ -208,6 +218,50 @@ const Profile = () => {
       setResumeLoading(false);
     }
   };
+
+  const handleProfileImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, or WebP images allowed", { duration: 3000 });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB", { duration: 3000 });
+      return;
+    }
+
+    setProfileImageLoading(true);
+    const t = toast.loading("Uploading profile image...");
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const endpoint = isStudent
+        ? "/students/profile-image"
+        : "/companies/profile-image";
+      const res = await api.post(endpoint, formData);
+      toast.success("Profile image updated", { id: t, duration: 2000 });
+      setProfileImageUrl(res.data.profile_image_url);
+      // Update cached profile image in AuthContext
+      updateProfileImage(res.data.profile_image_url);
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "Upload failed";
+      toast.error(msg, { id: t, duration: 3000 });
+    } finally {
+      setProfileImageLoading(false);
+      // Reset input so same file can be selected again
+      if (profileImageInputRef.current) {
+        profileImageInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-12 px-4">
       <div className="max-w-6xl mx-auto space-y-10">
@@ -218,21 +272,69 @@ const Profile = () => {
           variants={fadeUp}
           className="flex items-center gap-4"
         >
-          <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl">
-            {isCompany ? (
-              <Building2 className="w-7 h-7 text-white" />
-            ) : (
-              <User className="w-7 h-7 text-white" />
-            )}
+          {/* Profile Image */}
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+              {profileImageUrl ? (
+                <img
+                  src={profileImageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : isCompany ? (
+                <Building2 className="w-10 h-10 text-white" />
+              ) : (
+                <User className="w-10 h-10 text-white" />
+              )}
+            </div>
+            {/* Upload overlay */}
+            <label
+              htmlFor="profile-image-upload"
+              className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+            >
+              {profileImageLoading ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Camera className="w-6 h-6 text-white" />
+              )}
+            </label>
+            <input
+              ref={profileImageInputRef}
+              id="profile-image-upload"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleProfileImageUpload}
+              className="sr-only"
+              disabled={profileImageLoading}
+            />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {isCompany ? "Company Profile" : "My Profile"}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+          <div className="flex-1">
+            {/* Editable Name */}
+            {isStudent && (
+              <input
+                name="full_name"
+                value={studentData.full_name}
+                onChange={handleStudentChange}
+                placeholder="Your Name"
+                className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full max-w-md"
+              />
+            )}
+            {isCompany && (
+              <input
+                name="company_name"
+                value={companyData.company_name}
+                onChange={handleCompanyChange}
+                placeholder="Company Name"
+                className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full max-w-md"
+              />
+            )}
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               {isCompany
                 ? "What students will see about your company"
                 : "Your information used for job matching"}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              Click on name or image to edit
             </p>
           </div>
         </motion.header>
@@ -249,20 +351,8 @@ const Profile = () => {
               className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-3xl p-8 shadow border dark:border-gray-700 space-y-6"
             >
               <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                Personal Information
+                Education & Location
               </h2>
-
-              <input
-                name="full_name"
-                value={studentData.full_name}
-                onChange={handleStudentChange}
-                placeholder="Full Name"
-                className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-
-              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                Education
-              </h3>
 
               <input
                 name="university"
@@ -363,14 +453,6 @@ const Profile = () => {
             <h2 className="text-xl font-bold dark:text-white">
               Company Information
             </h2>
-
-            <input
-              name="company_name"
-              value={companyData.company_name}
-              onChange={handleCompanyChange}
-              placeholder="Company Name"
-              className="input dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
 
             <div className="grid md:grid-cols-2 gap-4">
               <input

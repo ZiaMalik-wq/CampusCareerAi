@@ -1,4 +1,4 @@
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useFocusTrap from "./useFocusTrap";
@@ -10,6 +10,7 @@ const ProfileMenu = ({
   setOpen,
   onLogout,
   dropdownRef,
+  profileImageUrl,
 }) => {
   useFocusTrap(open, dropdownRef);
 
@@ -21,11 +22,21 @@ const ProfileMenu = ({
         aria-expanded={open}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
-          {(user.full_name || user.name || "U")[0].toUpperCase()}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+          {profileImageUrl ? (
+            <img
+              src={profileImageUrl}
+              alt="Profile"
+              className="w-full h-full object-cover rounded-full"
+            />
+          ) : (
+            (user.full_name || user.name || "U")[0].toUpperCase()
+          )}
         </div>
         <ChevronDown
-          className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 transition-transform dark:text-gray-300 ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -53,17 +64,19 @@ const ProfileMenu = ({
                 <Link
                   to="/profile"
                   role="menuitem"
-                  className="block px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
+                  className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
                   onClick={() => setOpen(false)}
                 >
+                  <User className="w-4 h-4" />
                   My Profile
                 </Link>
                 <Link
                   to="/analytics"
                   role="menuitem"
-                  className="block px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
+                  className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"
                   onClick={() => setOpen(false)}
                 >
+                  <BarChart3 className="w-4 h-4" />
                   Analytics
                 </Link>
               </>

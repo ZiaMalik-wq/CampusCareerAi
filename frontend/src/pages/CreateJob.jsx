@@ -77,7 +77,10 @@ const CreateJob = () => {
 
       await api.post("/jobs/create", payload);
 
-      toast.success("Job posted successfully!", { id: toastId });
+      toast.success("Job posted successfully!", {
+        id: toastId,
+        duration: 3000,
+      });
       setTimeout(() => navigate("/my-jobs"), 1200);
     } catch (error) {
       const msg =
@@ -86,7 +89,7 @@ const CreateJob = () => {
           : error.response?.data?.detail ||
             "Failed to post job. Please try again.";
 
-      toast.error(msg, { id: toastId });
+      toast.error(msg, { id: toastId, duration: 4000 });
     } finally {
       setLoading(false);
     }

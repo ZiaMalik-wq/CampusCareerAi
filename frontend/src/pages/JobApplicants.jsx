@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -13,29 +12,12 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const JobApplicants = () => {
   const { id } = useParams(); // Job ID
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-
-  const reduceMotion = useReducedMotion();
-  const fadeUp = {
-    hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: reduceMotion ? 0 : 0.35, ease: "easeOut" },
-    },
-  };
-  const stagger = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: reduceMotion ? 0 : 0.06 },
-    },
-  };
 
   const [applicants, setApplicants] = useState([]);
   const [jobTitle, setJobTitle] = useState("");
@@ -45,7 +27,11 @@ const JobApplicants = () => {
   const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
-    if (user && user.role !== "company") {
+    // Wait for user to be loaded from AuthContext
+    if (!user) return;
+
+    // Redirect non-company users
+    if (user.role?.toLowerCase() !== "company") {
       navigate("/");
       return;
     }
@@ -56,14 +42,17 @@ const JobApplicants = () => {
         setJobTitle(jobRes.data.title);
 
         const appRes = await api.get(`/applications/job/${id}`);
+        console.log("Applicants data:", appRes.data);
         setApplicants(appRes.data);
       } catch (error) {
         console.error("Error fetching applicants:", error);
         if (error.response?.status === 403) {
-          toast.error("You are not authorized to view these applicants.");
+          toast.error("You are not authorized to view these applicants.", {
+            duration: 4000,
+          });
           navigate("/my-jobs");
         } else {
-          toast.error("Failed to load applicants.");
+          toast.error("Failed to load applicants.", { duration: 4000 });
         }
       } finally {
         setLoading(false);
@@ -82,7 +71,6 @@ const JobApplicants = () => {
 
     try {
       // 1. Call Backend
-      // Payload: { "status": "HIRED" } -> Matches ApplicationUpdate schema
       await api.patch(`/applications/${applicationId}/status`, {
         status: newStatus,
       });
@@ -96,140 +84,135 @@ const JobApplicants = () => {
         )
       );
 
-      toast.success(`Marked as ${newStatus}`, { id: toastId });
+      toast.success(`Marked as ${newStatus}`, { id: toastId, duration: 3000 });
     } catch (error) {
       console.error("Status Update Error:", error);
       const errorMsg =
         error.response?.data?.detail || "Failed to update status.";
-      toast.error(errorMsg, { id: toastId });
+      toast.error(errorMsg, { id: toastId, duration: 4000 });
     } finally {
-      // 3. Stop Loading State (This ensures the dropdown comes back)
       setUpdatingId(null);
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "HIRED":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "REJECTED":
-        return "bg-red-100 text-red-700 border-red-200";
-      case "SHORTLISTED":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "INTERVIEW":
-        return "bg-purple-100 text-purple-700 border-purple-200";
+    switch (status?.toLowerCase()) {
+      case "hired":
+        return "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800";
+      case "rejected":
+        return "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800";
+      case "shortlisted":
+        return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
+      case "interview":
+        return "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800";
       default:
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800";
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <motion.div
-        className="flex justify-center items-center h-[80vh]"
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-      >
+      <div className="flex justify-center items-center h-[80vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </motion.div>
+      </div>
     );
+  }
 
   return (
-    <motion.div
-      className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4"
-      initial="hidden"
-      animate="visible"
-      variants={stagger}
-    >
-      <Toaster position="top-center" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
       <div className="container mx-auto max-w-6xl">
         {/* HEADER */}
-        <motion.div variants={fadeUp} className="mb-8">
+        <div className="mb-8">
           <button
             onClick={() => navigate(`/my-jobs`)}
-            className="flex items-center text-gray-500 hover:text-blue-600 mb-4 transition"
+            className="flex items-center text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition"
           >
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </button>
 
           <div className="flex justify-between items-end">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Applicants</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Applicants
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Viewing candidates for{" "}
-                <span className="font-semibold text-blue-600">{jobTitle}</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                  {jobTitle}
+                </span>
               </p>
             </div>
-            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-sm font-medium text-gray-600">
+            <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300">
               Total: {applicants.length}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* CONTENT */}
         {applicants.length === 0 ? (
-          <motion.div
-            variants={fadeUp}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center"
-          >
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center">
             <div className="w-20 h-20 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="w-10 h-10 text-gray-300" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               No applicants yet
             </h3>
-            <p className="text-gray-500 mt-2">
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
               Wait for students to discover your job posting.
             </p>
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-          >
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Candidate
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Education
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Skills
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
                       Resume
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {applicants.map((applicant) => (
                     <tr
                       key={applicant.application_id}
-                      className="hover:bg-blue-50/30 transition"
+                      className="hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition"
                     >
                       {/* Name & Email */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
-                            {applicant.full_name.charAt(0)}
-                          </div>
+                          {applicant.profile_image_url ? (
+                            <img
+                              src={applicant.profile_image_url}
+                              alt={applicant.full_name}
+                              className="w-10 h-10 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
+                              {applicant.full_name?.charAt(0) || "?"}
+                            </div>
+                          )}
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900 dark:text-white">
                               {applicant.full_name}
                             </p>
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                               <Mail className="w-3 h-3" />
                               {applicant.email}
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                            <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                               <Calendar className="w-3 h-3" />
                               Applied:{" "}
                               {new Date(
@@ -243,13 +226,13 @@ const JobApplicants = () => {
                       {/* Education */}
                       <td className="px-6 py-4">
                         <div className="text-sm">
-                          <p className="font-medium text-gray-900 flex items-center gap-1">
-                            <GraduationCap className="w-4 h-4 text-gray-400" />
+                          <p className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                            <GraduationCap className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                             {applicant.university || "N/A"}
                           </p>
-                          <p className="text-gray-500 text-xs mt-1">
+                          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
                             CGPA:{" "}
-                            <span className="font-semibold text-gray-700">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">
                               {applicant.cgpa || "N/A"}
                             </span>
                           </p>
@@ -266,13 +249,13 @@ const JobApplicants = () => {
                               .map((skill, i) => (
                                 <span
                                   key={i}
-                                  className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded border border-gray-200"
+                                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded border border-gray-200 dark:border-gray-600"
                                 >
                                   {skill.trim()}
                                 </span>
                               ))
                           ) : (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
                               No skills
                             </span>
                           )}
@@ -293,7 +276,7 @@ const JobApplicants = () => {
                                   e.target.value
                                 );
                               }}
-                              className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors uppercase 
+                              className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors uppercase
                                 ${getStatusColor(applicant.status)}
                                 ${
                                   updatingId === applicant.application_id
@@ -302,12 +285,36 @@ const JobApplicants = () => {
                                 }
                               `}
                             >
-                              {/* Ensure these values match your backend Enum exactly */}
-                              <option value="applied">Applied</option>
-                              <option value="shortlisted">Shortlisted</option>
-                              <option value="interview">Interview</option>
-                              <option value="hired">Hired</option>
-                              <option value="rejected">Rejected</option>
+                              <option
+                                value="applied"
+                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                Applied
+                              </option>
+                              <option
+                                value="shortlisted"
+                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                Shortlisted
+                              </option>
+                              <option
+                                value="interview"
+                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                Interview
+                              </option>
+                              <option
+                                value="hired"
+                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                Hired
+                              </option>
+                              <option
+                                value="rejected"
+                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              >
+                                Rejected
+                              </option>
                             </select>
 
                             {/* Chevron or Spinner */}
@@ -317,8 +324,10 @@ const JobApplicants = () => {
                               ) : (
                                 <ChevronDown
                                   className={`w-3 h-3 ${
-                                    applicant.status === "HIRED" ||
-                                    applicant.status === "REJECTED"
+                                    applicant.status?.toLowerCase() ===
+                                      "hired" ||
+                                    applicant.status?.toLowerCase() ===
+                                      "rejected"
                                       ? "opacity-70"
                                       : "text-blue-600"
                                   }`}
@@ -336,13 +345,13 @@ const JobApplicants = () => {
                             href={applicant.resume_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 transition"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
                           >
                             <FileText className="w-4 h-4" />
                             View CV
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-400 italic">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 italic">
                             No CV
                           </span>
                         )}
@@ -352,10 +361,10 @@ const JobApplicants = () => {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

@@ -87,6 +87,7 @@ class StudentPublic(BaseModel):
     cgpa: Optional[float] = None
     skills: Optional[str] = None
     resume_url: Optional[str] = None
+    profile_image_url: Optional[str] = None
     city: Optional[str] = None
     
 class JobRecommendation(JobPublic):
@@ -114,6 +115,7 @@ class CompanyPublic(BaseModel):
     company_name: str
     location: Optional[str] = None
     website: Optional[str] = None
+    profile_image_url: Optional[str] = None
 
 
 class ApplicationBase(BaseModel):
@@ -144,6 +146,7 @@ class ApplicantPublic(BaseModel):
     cgpa: Optional[float] = None
     skills: Optional[str] = None
     resume_url: Optional[str] = None # The Signed URL
+    profile_image_url: Optional[str] = None # Profile picture URL
     status: ApplicationStatus
     applied_at: datetime
     

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 
 export const AuthContext = createContext();
@@ -6,9 +6,22 @@ export const AuthContext = createContext();
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [profileImageUrl, setProfileImageUrl] = useState(
+    () => localStorage.getItem("profileImageUrl") || null
+  );
 
   // Auth bootstrap loading (NOT form loading)
   const [loading, setLoading] = useState(true);
+
+  // Update profile image and cache it
+  const updateProfileImage = useCallback((url) => {
+    setProfileImageUrl(url);
+    if (url) {
+      localStorage.setItem("profileImageUrl", url);
+    } else {
+      localStorage.removeItem("profileImageUrl");
+    }
+  }, []);
 
   const fetchCurrentUser = async (token) => {
     try {
@@ -23,21 +36,47 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Token invalid or expired", error);
       localStorage.removeItem("token");
+      localStorage.removeItem("profileImageUrl");
       setUser(null);
+      setProfileImageUrl(null);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch profile image for user
+  const fetchProfileImage = useCallback(
+    async (userData) => {
+      if (!userData || userData.role?.toUpperCase() === "ADMIN") return;
+
+      try {
+        const isCompany = userData.role?.toLowerCase() === "company";
+        const endpoint = isCompany ? "/companies/profile" : "/students/profile";
+        const res = await api.get(endpoint);
+        updateProfileImage(res.data.profile_image_url || null);
+      } catch (err) {
+        console.error("Failed to fetch profile image:", err);
+      }
+    },
+    [updateProfileImage]
+  );
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetchCurrentUser(token).catch(() => {});
+      fetchCurrentUser(token)
+        .then((userData) => {
+          // Fetch fresh profile image in background
+          fetchProfileImage(userData);
+        })
+        .catch(() => {});
     } else {
       setLoading(false);
+      localStorage.removeItem("profileImageUrl");
+      setProfileImageUrl(null);
     }
-  }, []);
+  }, [fetchProfileImage]);
 
   const login = async (email, password) => {
     try {
@@ -64,11 +103,22 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("profileImageUrl");
     setUser(null);
+    setProfileImageUrl(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        loading,
+        profileImageUrl,
+        updateProfileImage,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

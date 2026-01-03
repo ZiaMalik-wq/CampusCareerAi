@@ -8,7 +8,6 @@ import {
   Building2,
   Mail,
   Lock,
-  Sparkles,
   ArrowRight,
   Eye,
   EyeOff,
@@ -64,12 +63,16 @@ const Register = () => {
       await api.post("/auth/register", formData);
       toast.success("Account created successfully!", {
         icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
+        duration: 3000,
       });
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
       toast.error(
         err.response?.data?.detail || "Registration failed. Try again.",
-        { icon: <AlertCircle className="w-5 h-5 text-red-600" /> }
+        {
+          icon: <AlertCircle className="w-5 h-5 text-red-600" />,
+          duration: 4000,
+        }
       );
       setLoading(false);
     }
@@ -92,8 +95,16 @@ const Register = () => {
           transition={{ duration: 0.4 }}
           className="text-center mb-8"
         >
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg mb-4 p-2">
+            <img
+              src="/dark_logo.svg"
+              alt="CampusCareer Logo"
+              width={48}
+              height={48}
+              loading="eager"
+              decoding="async"
+              className="w-12 h-12 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Join CampusCareer

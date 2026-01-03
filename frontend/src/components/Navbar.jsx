@@ -1,6 +1,16 @@
 import { useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  Shield,
+  LayoutDashboard,
+  Briefcase,
+  Wand2,
+  Bookmark,
+  FileText,
+  Home,
+} from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import Logo from "./Logo";
 import DesktopNav from "./DesktopNav";
@@ -9,7 +19,7 @@ import ThemeToggle from "./ThemeToggle";
 import { useNavbarState } from "./useNavbarState";
 
 const Navbar = () => {
-  const { user, logout, loading } = useContext(AuthContext);
+  const { user, logout, loading, profileImageUrl } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,21 +30,21 @@ const Navbar = () => {
 
   const navLinks = user
     ? isAdmin
-      ? [{ to: "/admin", label: "Admin Panel" }]
+      ? [{ to: "/admin", label: "Admin Panel", icon: "Shield" }]
       : isCompany
       ? [
-          { to: "/my-jobs", label: "Dashboard" },
-          { to: "/jobs", label: "Jobs" },
+          { to: "/my-jobs", label: "Dashboard", icon: "LayoutDashboard" },
+          { to: "/jobs", label: "Jobs", icon: "Briefcase" },
         ]
       : [
-          { to: "/jobs", label: "Jobs" },
-          { to: "/recommendations", label: "AI Picks" },
-          { to: "/saved-jobs", label: "Saved" },
-          { to: "/my-applications", label: "Applications" },
+          { to: "/jobs", label: "Jobs", icon: "Briefcase" },
+          { to: "/recommendations", label: "AI Picks", icon: "Wand2" },
+          { to: "/saved-jobs", label: "Saved", icon: "Bookmark" },
+          { to: "/my-applications", label: "Applications", icon: "FileText" },
         ]
     : [
-        { to: "/", label: "Home" },
-        { to: "/jobs", label: "Jobs" },
+        { to: "/", label: "Home", icon: "Home" },
+        { to: "/jobs", label: "Jobs", icon: "Briefcase" },
       ];
 
   const handleLogout = () => {
@@ -57,6 +67,7 @@ const Navbar = () => {
             navLinks={navLinks}
             navbar={navbar}
             onLogout={handleLogout}
+            profileImageUrl={profileImageUrl}
           />
         </div>
 
@@ -79,6 +90,7 @@ const Navbar = () => {
         open={navbar.mobileOpen}
         setOpen={navbar.setMobileOpen}
         onLogout={handleLogout}
+        profileImageUrl={profileImageUrl}
       />
     </nav>
   );

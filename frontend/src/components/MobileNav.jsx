@@ -1,6 +1,13 @@
 import NavLinks from "./NavLinks";
 import { Link } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import {
+  LogOut,
+  LogIn,
+  UserPlus,
+  PlusCircle,
+  User,
+  BarChart3,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useFocusTrap from "./useFocusTrap";
 import { useRef } from "react";
@@ -13,6 +20,7 @@ const MobileNav = ({
   open,
   setOpen,
   onLogout,
+  profileImageUrl,
 }) => {
   const menuRef = useRef(null);
   useFocusTrap(open, menuRef);
@@ -45,16 +53,28 @@ const MobileNav = ({
               <>
                 <Link
                   to="/profile"
-                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   onClick={() => setOpen(false)}
                 >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+                    {profileImageUrl ? (
+                      <img
+                        src={profileImageUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      (user.full_name || user.name || "U")[0].toUpperCase()
+                    )}
+                  </div>
                   My Profile
                 </Link>
                 <Link
                   to="/analytics"
-                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="flex items-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   onClick={() => setOpen(false)}
                 >
+                  <BarChart3 className="w-4 h-4" />
                   Analytics
                 </Link>
               </>
@@ -64,8 +84,9 @@ const MobileNav = ({
               <Link
                 to="/post-job"
                 onClick={() => setOpen(false)}
-                className="block mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center hover:shadow-lg transition-all"
+                className="flex items-center justify-center gap-2 mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center hover:shadow-lg transition-all"
               >
+                <PlusCircle className="w-4 h-4" />
                 Post Job
               </Link>
             )}
@@ -83,15 +104,17 @@ const MobileNav = ({
                 <Link
                   to="/login"
                   onClick={() => setOpen(false)}
-                  className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="flex items-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
+                  <LogIn className="w-4 h-4" />
                   Login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setOpen(false)}
-                  className="block mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center rounded-lg hover:shadow-lg transition-all"
+                  className="flex items-center justify-center gap-2 mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center rounded-lg hover:shadow-lg transition-all"
                 >
+                  <UserPlus className="w-4 h-4" />
                   Register
                 </Link>
               </>

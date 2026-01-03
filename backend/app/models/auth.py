@@ -37,6 +37,7 @@ class Student(SQLModel, table=True):
     university: Optional[str] = None
     city: Optional[str] = None
     resume_url: Optional[str] = None
+    profile_image_url: Optional[str] = None
     full_name: str
     cgpa: Optional[float] = None
     skills: Optional[str] = None
@@ -61,6 +62,7 @@ class Company(SQLModel, table=True):
     company_name: str
     location: Optional[str] = None
     website: Optional[str] = None
+    profile_image_url: Optional[str] = None
     
     # Relationships
     user: Optional[User] = Relationship(back_populates="company_profile")

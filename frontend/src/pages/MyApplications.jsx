@@ -13,11 +13,38 @@ import {
   Users, // Added Users icon for Interview
 } from "lucide-react";
 
+// Cache for applications (60 second TTL)
+const MY_APPLICATIONS_CACHE_TTL_MS = 60_000;
+let myApplicationsCache = {
+  userKey: null,
+  fetchedAt: 0,
+  applications: null,
+};
+
+// Helper to check if cache is valid
+const isCacheValid = (userKey) => {
+  const now = Date.now();
+  return (
+    myApplicationsCache.applications &&
+    myApplicationsCache.userKey === userKey &&
+    now - myApplicationsCache.fetchedAt < MY_APPLICATIONS_CACHE_TTL_MS
+  );
+};
+
 const MyApplications = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const userKey = user?.id || user?.email || "anonymous";
+
+  // Initialize from cache if valid to prevent flash of empty content
+  const [applications, setApplications] = useState(() => {
+    if (isCacheValid(userKey)) {
+      return myApplicationsCache.applications;
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => !isCacheValid(userKey));
 
   useEffect(() => {
     // Security Check
@@ -26,10 +53,28 @@ const MyApplications = () => {
       return;
     }
 
+    if (!user) {
+      setLoading(true);
+      return;
+    }
+
+    // Check cache again in case userKey changed
+    if (isCacheValid(userKey)) {
+      setApplications(myApplicationsCache.applications);
+      setLoading(false);
+      return;
+    }
+
     const fetchApplications = async () => {
       try {
         const response = await api.get("/applications/me");
-        setApplications(response.data);
+        const data = response.data || [];
+        setApplications(data);
+        myApplicationsCache = {
+          userKey,
+          fetchedAt: Date.now(),
+          applications: data,
+        };
       } catch (err) {
         console.error("Error fetching applications:", err);
       } finally {
@@ -37,8 +82,8 @@ const MyApplications = () => {
       }
     };
 
-    if (user) fetchApplications();
-  }, [user, navigate]);
+    fetchApplications();
+  }, [user, userKey, navigate]);
 
   // Helper for Status Styling
   const getStatusBadge = (status) => {
@@ -47,31 +92,31 @@ const MyApplications = () => {
       case "ACCEPTED":
       case "HIRED":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
             <CheckCircle2 className="w-3 h-3" /> Hired
           </span>
         );
       case "REJECTED":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
             <XCircle className="w-3 h-3" /> Rejected
           </span>
         );
       case "INTERVIEW":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
             <Users className="w-3 h-3" /> Interview
           </span>
         );
       case "SHORTLISTED":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300">
             <Clock className="w-3 h-3" /> Shortlisted
           </span>
         );
       default: // APPLIED
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
             <FileText className="w-3 h-3" /> Applied
           </span>
         );
@@ -146,7 +191,7 @@ const MyApplications = () => {
                 <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
                   <Link
                     to={`/jobs/${app.job_id}`}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition text-center w-full md:w-auto"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-center w-full md:w-auto"
                   >
                     View Job
                   </Link>

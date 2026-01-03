@@ -5,11 +5,43 @@ import { AuthContext } from "../context/AuthContext";
 import JobCard from "../components/JobCard";
 import { Bookmark, ArrowRight, Loader2 } from "lucide-react";
 
+// Cache for saved jobs (60 second TTL)
+const SAVED_JOBS_CACHE_TTL_MS = 60_000;
+let savedJobsCache = {
+  userKey: null,
+  fetchedAt: 0,
+  jobs: null,
+};
+
+// Helper to check if cache is valid
+const isCacheValid = (userKey) => {
+  const now = Date.now();
+  return (
+    savedJobsCache.jobs &&
+    savedJobsCache.userKey === userKey &&
+    now - savedJobsCache.fetchedAt < SAVED_JOBS_CACHE_TTL_MS
+  );
+};
+
+// Export function to invalidate cache when user saves/unsaves a job
+export const invalidateSavedJobsCache = () => {
+  savedJobsCache = { userKey: null, fetchedAt: 0, jobs: null };
+};
+
 const SavedJobs = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const userKey = user?.id || user?.email || "anonymous";
+
+  // Initialize from cache if valid to prevent flash of empty content
+  const [jobs, setJobs] = useState(() => {
+    if (isCacheValid(userKey)) {
+      return savedJobsCache.jobs;
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => !isCacheValid(userKey));
 
   useEffect(() => {
     // Security Check
@@ -18,10 +50,28 @@ const SavedJobs = () => {
       return;
     }
 
+    if (!user) {
+      setLoading(true);
+      return;
+    }
+
+    // Check cache again in case userKey changed
+    if (isCacheValid(userKey)) {
+      setJobs(savedJobsCache.jobs);
+      setLoading(false);
+      return;
+    }
+
     const fetchSavedJobs = async () => {
       try {
         const response = await api.get("/jobs/saved");
-        setJobs(response.data);
+        const data = response.data || [];
+        setJobs(data);
+        savedJobsCache = {
+          userKey,
+          fetchedAt: Date.now(),
+          jobs: data,
+        };
       } catch (err) {
         console.error("Error fetching saved jobs:", err);
       } finally {
@@ -29,12 +79,22 @@ const SavedJobs = () => {
       }
     };
 
-    if (user) fetchSavedJobs();
-  }, [user, navigate]);
+    fetchSavedJobs();
+  }, [user, userKey, navigate]);
 
   // Callback to remove job from list immediately when unsaved
   const handleRemoveFromList = (jobId) => {
-    setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+    setJobs((prevJobs) => {
+      const updatedJobs = prevJobs.filter((job) => job.id !== jobId);
+      // Update cache as well
+      if (savedJobsCache.jobs) {
+        savedJobsCache = {
+          ...savedJobsCache,
+          jobs: updatedJobs,
+        };
+      }
+      return updatedJobs;
+    });
   };
 
   return (
