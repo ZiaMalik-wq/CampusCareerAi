@@ -156,12 +156,12 @@ const NotificationBell = () => {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+        <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-2 sm:w-80 md:w-96 max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
           {/* Header */}
-          <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="px-3 sm:px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between flex-wrap gap-2">
+            <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
               <Bell className="w-4 h-4" />
-              Notifications
+              <span>Notifications</span>
               {unreadCount > 0 && (
                 <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
                   {unreadCount} new
@@ -171,22 +171,23 @@ const NotificationBell = () => {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 whitespace-nowrap"
               >
                 <CheckCheck className="w-3 h-3" />
-                Mark all read
+                <span className="hidden sm:inline">Mark all read</span>
+                <span className="sm:hidden">Mark all</span>
               </button>
             )}
           </div>
 
           {/* Notification List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="p-8 text-center">
+              <div className="p-6 sm:p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto"></div>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="p-6 sm:p-8 text-center">
                 <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <p className="text-gray-500 dark:text-gray-400 font-medium">
                   No notifications yet
@@ -201,13 +202,13 @@ const NotificationBell = () => {
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`px-4 py-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
+                    className={`px-3 sm:px-4 py-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
                       !notification.is_read
                         ? "bg-blue-50/50 dark:bg-blue-900/20"
                         : ""
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2 sm:gap-3">
                       {/* Unread indicator */}
                       <div className="mt-1.5 flex-shrink-0">
                         {!notification.is_read ? (
@@ -269,7 +270,7 @@ const NotificationBell = () => {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600 text-center">
+            <div className="px-3 sm:px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600 text-center">
               <button
                 onClick={() => {
                   navigate("/my-applications");

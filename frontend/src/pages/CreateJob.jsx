@@ -102,24 +102,24 @@ const CreateJob = () => {
 
   /* ---------------- Render ---------------- */
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-4 sm:py-6 px-4">
       <div className="relative max-w-4xl mx-auto">
         {/* Header */}
-        <header className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
-            <Briefcase className="w-7 h-7 text-white" />
+        <header className="text-center mb-4 sm:mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-2 sm:mb-3">
+            <Briefcase className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             Post a New Opportunity
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-2">
             Create a clear, compelling role to attract top talent
           </p>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-xl border dark:border-gray-700 p-5 md:p-6 space-y-6"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-2xl sm:rounded-3xl shadow-xl border dark:border-gray-700 p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6"
         >
           {/* Section: Basics */}
           <motion.section

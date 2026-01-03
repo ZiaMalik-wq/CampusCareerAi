@@ -279,7 +279,10 @@ const Jobs = () => {
           </div>
 
           {/* Search Modes */}
-          <div role="radiogroup" className="relative flex flex-wrap gap-2">
+          <div
+            role="radiogroup"
+            className="relative flex flex-col sm:flex-row flex-wrap gap-2"
+          >
             {Object.entries(SEARCH_MODES).map(([key, m]) => {
               const Icon = m.icon;
               const active = searchMode === key;
@@ -292,10 +295,11 @@ const Jobs = () => {
                   key={key}
                   type="button"
                   onClick={() => setSearchMode(key)}
-                  className={`flex-1 py-3 px-4 rounded-xl border-2 font-semibold transition-all duration-200 ${btnClass} flex items-center justify-center gap-2 shadow-sm hover:shadow-md`}
+                  className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border-2 font-semibold transition-all duration-200 ${btnClass} flex items-center justify-center gap-2 shadow-sm hover:shadow-md text-sm sm:text-base min-w-[150px]`}
                 >
                   <Icon className="w-4 h-4" />
-                  {m.label}
+                  <span className="hidden sm:inline">{m.label}</span>
+                  <span className="sm:hidden">{m.label.split(" ")[0]}</span>
                 </button>
               );
             })}

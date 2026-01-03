@@ -218,20 +218,20 @@ const MyJobs = () => {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-4 sm:py-6 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
-                <Briefcase className="w-8 h-8 text-white" />
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <div className="p-2.5 sm:p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg">
+                <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                   Company Dashboard
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                   Manage and track your job postings
                 </p>
               </div>
@@ -239,7 +239,7 @@ const MyJobs = () => {
 
             <button
               onClick={() => navigate("/post-job")}
-              className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl sm:rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 font-bold text-sm sm:text-base"
             >
               <PlusCircle className="w-5 h-5" />
               Post New Job
@@ -247,32 +247,32 @@ const MyJobs = () => {
           </div>
 
           {/* Quick Stats Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 shadow-xl mb-8 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl mb-6 sm:mb-8 relative overflow-hidden">
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
             </div>
 
             <div className="relative">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
                     Quick Overview
                   </h2>
-                  <p className="text-blue-100 text-sm">
+                  <p className="text-blue-100 text-xs sm:text-sm">
                     Your recruitment metrics at a glance
                   </p>
                 </div>
                 <button
                   onClick={() => navigate("/analytics")}
-                  className="flex items-center gap-2 px-5 py-3 bg-white/20 border border-white/30 rounded-xl hover:bg-white/30 transition text-sm font-semibold"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/20 border border-white/30 rounded-lg sm:rounded-xl hover:bg-white/30 transition text-xs sm:text-sm font-semibold"
                 >
-                  <BarChart2 className="w-5 h-5" />
+                  <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>View Full Analytics</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-white/20 rounded-xl">

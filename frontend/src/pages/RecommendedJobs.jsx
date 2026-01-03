@@ -40,22 +40,22 @@ const RecommendedJobs = () => {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 sm:py-10 px-4">
       <div className="container mx-auto max-w-6xl">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 mb-10 text-white shadow-lg">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 mb-8 sm:mb-10 text-white shadow-lg">
+          <div className="flex flex-col gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-6 h-6 text-yellow-300" />
-                <span className="font-bold tracking-wide uppercase text-sm text-blue-100">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
+                <span className="font-bold tracking-wide uppercase text-xs sm:text-sm text-blue-100">
                   AI Powered
                 </span>
               </div>
-              <h1 className="text-3xl font-bold mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                 Top Picks for {user?.full_name || "You"}
               </h1>
-              <p className="text-blue-100 max-w-xl">
+              <p className="text-sm sm:text-base text-blue-100 max-w-xl">
                 We analyzed your resume and skills against our database. Here
                 are the jobs where you have the highest chance of success.
               </p>
@@ -63,7 +63,7 @@ const RecommendedJobs = () => {
 
             <Link
               to="/profile"
-              className="px-6 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition text-sm font-semibold"
+              className="w-full sm:w-auto text-center px-6 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition text-sm font-semibold"
             >
               Update Profile / CV
             </Link>

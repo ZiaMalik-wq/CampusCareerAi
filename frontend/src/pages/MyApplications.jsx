@@ -124,12 +124,12 @@ const MyApplications = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 sm:py-10 px-4">
       <div className="container mx-auto max-w-5xl">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           My Applications
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 sm:mb-8">
           Track the status of your job applications.
         </p>
 
@@ -160,18 +160,18 @@ const MyApplications = () => {
             {applications.map((app) => (
               <div
                 key={app.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-md transition duration-200 flex flex-col gap-4"
               >
                 {/* Left: Job Info */}
                 <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                       {app.job_title}
                     </h3>
                     {getStatusBadge(app.status)}
                   </div>
 
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Building className="w-4 h-4 text-gray-400" />
                       {app.company_name}
@@ -188,10 +188,10 @@ const MyApplications = () => {
                 </div>
 
                 {/* Right: Actions */}
-                <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                <div className="flex items-center gap-3 w-full mt-2">
                   <Link
                     to={`/jobs/${app.job_id}`}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-center w-full md:w-auto"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-center text-sm sm:text-base flex-1 sm:flex-initial"
                   >
                     View Job
                   </Link>

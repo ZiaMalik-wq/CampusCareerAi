@@ -612,20 +612,20 @@ const JobDetails = () => {
 
       {/* Cover Letter Modal */}
       {showCoverLetterModal && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-600 rounded-xl shadow-lg">
-                    <FileText className="w-6 h-6 text-white" />
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 flex-shrink-0">
+              <div className="flex items-start sm:items-center justify-between gap-2">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 sm:p-2 bg-emerald-600 rounded-lg sm:rounded-xl shadow-lg flex-shrink-0">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
                       AI Cover Letter Generator
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                       Tailored for {job?.title} at {job?.company_name}
                     </p>
                   </div>
@@ -640,11 +640,11 @@ const JobDetails = () => {
 
               {/* Tone Selector - Only show before generation */}
               {!coverLetter && !coverLetterLoading && (
-                <div className="mt-4 flex items-center gap-3">
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Tone:
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {["professional", "enthusiastic", "confident"].map(
                       (tone) => (
                         <button
@@ -666,7 +666,7 @@ const JobDetails = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
               {coverLetterLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="relative">
@@ -728,7 +728,7 @@ const JobDetails = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row gap-3 justify-end">
+            <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end flex-shrink-0">
               {coverLetter ? (
                 <>
                   <button
@@ -779,20 +779,20 @@ const JobDetails = () => {
 
       {/* Skill Gap Analysis Modal */}
       {showSkillGapModal && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
-                    <TrendingUp className="w-6 h-6 text-white" />
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 flex-shrink-0">
+              <div className="flex items-start sm:items-center justify-between gap-2">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg sm:rounded-xl shadow-lg flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
                       Skill Gap Analysis
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                       Your personalized learning path for {job?.title}
                     </p>
                   </div>
@@ -807,7 +807,7 @@ const JobDetails = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 min-h-0">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
               {skillGapLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="relative">
@@ -826,7 +826,7 @@ const JobDetails = () => {
               ) : skillGapData ? (
                 <div className="space-y-6">
                   {/* Match Overview */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     {/* Match Percentage */}
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800/50 text-center">
                       <div className="relative inline-flex items-center justify-center">
@@ -930,10 +930,10 @@ const JobDetails = () => {
                           className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
                         >
                           {/* Skill Header */}
-                          <div className="p-4 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/50">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-3">
-                                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/50">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                                   {gap.skill}
                                 </span>
                                 <span
@@ -948,7 +948,7 @@ const JobDetails = () => {
                                   {gap.importance}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 text-sm">
+                              <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
                                 <span className="text-gray-500 dark:text-gray-400">
                                   Current:{" "}
                                   <span
@@ -975,15 +975,15 @@ const JobDetails = () => {
                           </div>
 
                           {/* Learning Resources */}
-                          <div className="p-4">
+                          <div className="p-3 sm:p-4">
                             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                               Recommended Learning Path
                             </p>
-                            <div className="space-y-3">
+                            <div className="space-y-2 sm:space-y-3">
                               {gap.learning_path?.map((resource, rIdx) => (
                                 <div
                                   key={rIdx}
-                                  className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                                  className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
                                 >
                                   <div
                                     className={`p-2 rounded-lg flex-shrink-0 ${
@@ -1078,7 +1078,7 @@ const JobDetails = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3 flex-shrink-0">
+            <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 flex-shrink-0">
               <button
                 onClick={() => setShowSkillGapModal(false)}
                 className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"

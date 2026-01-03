@@ -136,39 +136,41 @@ const InterviewPrep = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 sm:py-10 px-4">
       <div className="container mx-auto max-w-4xl">
         {/* HEADER */}
         <button
           onClick={() => navigate(`/jobs/${id}`)}
-          className="flex items-center text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition font-medium"
+          className="flex items-center text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 mb-4 sm:mb-6 transition font-medium text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Job Details
         </button>
 
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
-            <Sparkles className="w-8 h-8 text-white" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6 sm:mb-8">
+          <div className="p-2.5 sm:p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
+            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               Interview Prep Plan
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               AI-generated questions based on your skill gaps.
             </p>
           </div>
         </div>
 
         {/* 1. RESUME FEEDBACK SECTION */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg mb-10">
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Target className="w-6 h-6 text-yellow-300" />
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg mb-8 sm:mb-10">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />
             </div>
             <div>
-              <h3 className="text-lg font-bold mb-2">Resume Feedback</h3>
-              <p className="text-blue-100 leading-relaxed font-medium">
+              <h3 className="text-base sm:text-lg font-bold mb-2">
+                Resume Feedback
+              </h3>
+              <p className="text-sm sm:text-base text-blue-100 leading-relaxed font-medium">
                 "{prepData?.resume_feedback}"
               </p>
             </div>
@@ -176,13 +178,13 @@ const InterviewPrep = () => {
         </div>
 
         {/* 2. TECHNICAL QUESTIONS */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+        <div className="mb-8 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
+            <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
             Technical & Skill Gap Questions
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {prepData?.technical_questions.map((q, idx) => (
               <div
                 key={idx}
@@ -191,10 +193,10 @@ const InterviewPrep = () => {
                 {/* Question Header (Clickable) */}
                 <div
                   onClick={() => toggleAnswer(idx)}
-                  className="p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="p-4 sm:p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   <div className="flex-1 pr-4">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">
                       {q.question}
                     </h3>
                   </div>

@@ -263,18 +263,18 @@ const Profile = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-12 px-4">
-      <div className="max-w-6xl mx-auto space-y-10">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-6 sm:py-12 px-4">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10">
         {/* Header */}
         <motion.header
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="flex items-center gap-4"
+          className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
         >
           {/* Profile Image */}
           <div className="relative group">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
               {profileImageUrl ? (
                 <img
                   src={profileImageUrl}
@@ -308,7 +308,7 @@ const Profile = () => {
               disabled={profileImageLoading}
             />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 w-full sm:w-auto">
             {/* Editable Name */}
             {isStudent && (
               <input
@@ -316,7 +316,7 @@ const Profile = () => {
                 value={studentData.full_name}
                 onChange={handleStudentChange}
                 placeholder="Your Name"
-                className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full max-w-md"
+                className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full"
               />
             )}
             {isCompany && (
@@ -325,10 +325,10 @@ const Profile = () => {
                 value={companyData.company_name}
                 onChange={handleCompanyChange}
                 placeholder="Company Name"
-                className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full max-w-md"
+                className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors w-full"
               />
             )}
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
               {isCompany
                 ? "What students will see about your company"
                 : "Your information used for job matching"}
@@ -348,9 +348,9 @@ const Profile = () => {
               animate="visible"
               variants={fadeUp}
               onSubmit={handleStudentSave}
-              className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-3xl p-8 shadow border dark:border-gray-700 space-y-6"
+              className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow border dark:border-gray-700 space-y-4 sm:space-y-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
                 Education & Location
               </h2>
 
