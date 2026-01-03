@@ -145,10 +145,10 @@ const AnalyticsPage = () => {
               <BarChart2 className="w-7 h-7 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                 {isCompany ? "Recruitment Analytics" : "My Career Insights"}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 {isCompany
                   ? "Track job performance and your candidate pipeline."
                   : "Visualize your application progress and market trends."}
@@ -291,17 +291,17 @@ const AnalyticsPage = () => {
                 />
               </motion.div>
               <motion.div variants={fadeUp} className="h-full">
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-5 text-white shadow-lg flex items-center justify-between h-full">
-                  <div>
-                    <h3 className="text-lg font-bold opacity-90">
+                <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-white shadow-lg flex items-center justify-between h-full">
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold opacity-90">
                       Market Insight
                     </h3>
-                    <p className="text-sm opacity-80 mt-1">
+                    <p className="text-xs sm:text-sm opacity-80 mt-1">
                       {data.market_trends[0]?.label || "Tech"} is currently the
                       most demanded skill.
                     </p>
                   </div>
-                  <Activity className="w-10 h-10 opacity-80" />
+                  <Activity className="w-8 sm:w-10 h-8 sm:h-10 opacity-80 flex-shrink-0" />
                 </div>
               </motion.div>
             </motion.div>
@@ -388,7 +388,7 @@ const AnalyticsPage = () => {
 // --- Sub-components for cleaner code ---
 
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex items-center justify-between group relative overflow-hidden">
+  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all flex items-center justify-between group relative overflow-hidden">
     {/* Decorative gradient overlay */}
     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -396,28 +396,30 @@ const StatCard = ({ title, value, icon, color }) => (
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         {title}
       </p>
-      <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
         {value}
       </h3>
     </div>
-    <div className={`p-3 rounded-2xl ${color} dark:opacity-90 relative z-10`}>
+    <div
+      className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} dark:opacity-90 relative z-10 flex-shrink-0`}
+    >
       {icon}
     </div>
   </div>
 );
 
 const ChartCard = ({ title, children }) => (
-  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
+  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
     {/* Decorative gradient overlay */}
     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
     <div className="relative z-10">
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
           {title}
         </h3>
       </div>
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
         {children}
       </div>
     </div>

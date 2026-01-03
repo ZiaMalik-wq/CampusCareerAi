@@ -142,27 +142,27 @@ const EditJob = () => {
     >
       <div className="max-w-4xl mx-auto">
         <motion.header variants={fadeUp} className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
-            <Briefcase className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-12 sm:w-14 h-12 sm:h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-3">
+            <Briefcase className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
             Edit Job
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-2">
             Update details to keep your listing accurate
           </p>
         </motion.header>
 
         <motion.div
           variants={fadeUp}
-          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-xl border dark:border-gray-700 p-5 md:p-6"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-xl border dark:border-gray-700 p-4 sm:p-5 md:p-6"
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 mb-5 border-b border-gray-100 dark:border-gray-700">
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
                 {jobData.title || "Untitled job"}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 Edit the fields below and save
               </p>
             </div>
@@ -308,14 +308,14 @@ const EditJob = () => {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="btn-secondary py-2.5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
+                className="btn-secondary py-2.5 w-full sm:w-auto dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className={`btn-primary ${
+                className={`btn-primary w-full sm:w-auto ${
                   saving ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >

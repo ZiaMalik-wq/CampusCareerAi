@@ -160,10 +160,10 @@ const AdminDashboard = () => {
               <Shield className="w-7 h-7 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
                 Admin Portal
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 System overview and user moderation.
               </p>
             </div>
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
             <StatCard
               title="Total Users"
               value={stats.total_users}
@@ -213,12 +213,12 @@ const AdminDashboard = () => {
 
         {/* User Management */}
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               User Management
             </h2>
 
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
@@ -230,7 +230,56 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="block lg:hidden divide-y divide-gray-100 dark:divide-gray-700">
+            {filteredUsers.map((u) => (
+              <div
+                key={u.id}
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {u.email}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      ID: #{u.id}
+                    </p>
+                  </div>
+                  {u.role.toLowerCase() !== "admin" && (
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
+                      title="Ban User"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-bold border ${getRoleBadge(
+                      u.role
+                    )}`}
+                  >
+                    {u.role}
+                  </span>
+                  {u.is_active ? (
+                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs font-medium">
+                      <CheckCircle className="w-3 h-3" /> Active
+                    </span>
+                  ) : (
+                    <span className="text-red-500 dark:text-red-400 text-xs">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50/80 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
                 <tr>
@@ -313,16 +362,20 @@ const AdminDashboard = () => {
 
 // Helper Component
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
-    <div>
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur p-3 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <div className="min-w-0">
+      <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
         {title}
       </p>
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+      <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">
         {value}
       </h3>
     </div>
-    <div className={`p-3 rounded-2xl ${color} dark:bg-opacity-20`}>{icon}</div>
+    <div
+      className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} dark:bg-opacity-20 flex-shrink-0`}
+    >
+      {icon}
+    </div>
   </div>
 );
 

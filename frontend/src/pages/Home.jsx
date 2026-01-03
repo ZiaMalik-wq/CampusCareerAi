@@ -58,7 +58,7 @@ const Home = () => {
             animate="visible"
             variants={fadeUp}
             transition={{ delay: 0.1, duration: 0.45 }}
-            className="text-5xl md:text-6xl font-black text-gray-900 dark:text-white mb-6 tracking-tight leading-tight"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 dark:text-white mb-6 tracking-tight leading-tight"
           >
             Find Your Dream{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
@@ -72,7 +72,7 @@ const Home = () => {
             animate="visible"
             variants={fadeUp}
             transition={{ delay: 0.2, duration: 0.45 }}
-            className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-6 leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-6 leading-relaxed"
           >
             Upload your resume, get AI-matched jobs, and apply with confidence.
           </motion.p>
@@ -147,7 +147,7 @@ const Home = () => {
           </motion.div>
 
           {/* Trust */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               10,000+ Students
@@ -174,10 +174,10 @@ const Home = () => {
           transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Why Choose CampusCareer?
           </h2>
-          <p className="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
             Built to help you find better opportunities, faster.
           </p>
         </motion.div>
