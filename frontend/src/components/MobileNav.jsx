@@ -49,6 +49,17 @@ const MobileNav = ({
           >
             <NavLinks links={navLinks} mobile onClick={() => setOpen(false)} />
 
+            {isCompany && (
+              <Link
+                to="/post-job"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center hover:shadow-lg transition-all"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Post Job
+              </Link>
+            )}
+
             {user && !isAdmin && (
               <>
                 <Link
@@ -68,17 +79,6 @@ const MobileNav = ({
                   Analytics
                 </Link>
               </>
-            )}
-
-            {isCompany && (
-              <Link
-                to="/post-job"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 mx-4 my-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-center hover:shadow-lg transition-all"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Post Job
-              </Link>
             )}
 
             {user ? (
