@@ -94,6 +94,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", access_token);
 
       const userData = await fetchCurrentUser(access_token);
+
+      // Fetch profile image after login
+      await fetchProfileImage(userData);
+
       return userData; //explicit success signal
     } catch (error) {
       console.error("Login failed", error);
