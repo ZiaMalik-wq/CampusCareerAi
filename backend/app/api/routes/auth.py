@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.auth import User, Student, Company, UserRole
 from app.schemas import UserCreate, UserPublic, Token
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
 from app.core.config import settings
 from datetime import timedelta
 from app.api.deps import get_current_user
@@ -80,15 +80,81 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 3. Create JWT Token
+    # 3. Create JWT Tokens (Access + Refresh)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role.value, "id": user.id},
         expires_delta=access_token_expires
     )
     
-    # 4. Return the token
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = create_refresh_token(
+        data={"sub": user.email, "role": user.role.value, "id": user.id},
+        expires_delta=refresh_token_expires
+    )
+    
+    # 4. Return both tokens
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+@router.post("/refresh", response_model=Token)
+def refresh_access_token(
+    refresh_token: str,
+    session: Session = Depends(get_session)
+):
+    """
+    Get a new access token using a valid refresh token.
+    """
+    from jose import JWTError, jwt
+    
+    try:
+        # 1. Decode the refresh token
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        
+        # 2. Verify it's a refresh token
+        if email is None or token_type != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 3. Find user by email
+        statement = select(User).where(User.email == email)
+        user = session.exec(statement).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 4. Create new access token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        new_access_token = create_access_token(
+            data={"sub": user.email, "role": user.role.value, "id": user.id},
+            expires_delta=access_token_expires
+        )
+        
+        # 5. Return new access token (keep same refresh token)
+        return {
+            "access_token": new_access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        }
+        
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 @router.get("/me", response_model=UserPublic)
 def read_users_me(current_user: User = Depends(get_current_user)):

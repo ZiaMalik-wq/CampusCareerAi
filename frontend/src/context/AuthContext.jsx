@@ -23,33 +23,36 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchCurrentUser = async (token) => {
-    try {
-      const response = await api.get("/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  const fetchCurrentUser = useCallback(
+    async (token) => {
+      try {
+        const response = await api.get("/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      setUser(response.data);
+        setUser(response.data);
 
-      // Set profile image from /auth/me response immediately
-      if (response.data.profile_image_url) {
-        updateProfileImage(response.data.profile_image_url);
+        // Set profile image from /auth/me response immediately
+        if (response.data.profile_image_url) {
+          updateProfileImage(response.data.profile_image_url);
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error("Token invalid or expired", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("profileImageUrl");
+        setUser(null);
+        setProfileImageUrl(null);
+        throw error;
+      } finally {
+        setLoading(false);
       }
-
-      return response.data;
-    } catch (error) {
-      console.error("Token invalid or expired", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("profileImageUrl");
-      setUser(null);
-      setProfileImageUrl(null);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [updateProfileImage]
+  );
 
   // Fetch profile image for user
   const fetchProfileImage = useCallback(
@@ -82,7 +85,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("profileImageUrl");
       setProfileImageUrl(null);
     }
-  }, [fetchProfileImage]);
+  }, [fetchCurrentUser, fetchProfileImage]);
 
   const login = async (email, password) => {
     try {
@@ -96,8 +99,11 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      const { access_token } = response.data;
+      const { access_token, refresh_token } = response.data;
       localStorage.setItem("token", access_token);
+      if (refresh_token) {
+        localStorage.setItem("refreshToken", refresh_token);
+      }
 
       const userData = await fetchCurrentUser(access_token);
 
@@ -110,6 +116,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("profileImageUrl");
     setUser(null);
     setProfileImageUrl(null);
