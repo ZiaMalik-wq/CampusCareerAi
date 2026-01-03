@@ -53,20 +53,10 @@ const MobileNav = ({
               <>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="flex items-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   onClick={() => setOpen(false)}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
-                    {profileImageUrl ? (
-                      <img
-                        src={profileImageUrl}
-                        alt="Profile"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      (user.full_name || user.name || "U")[0].toUpperCase()
-                    )}
-                  </div>
+                  <User className="w-4 h-4" />
                   My Profile
                 </Link>
                 <Link

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Menu,
   X,
@@ -73,6 +73,22 @@ const Navbar = () => {
 
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
+          {user && !isAdmin && (
+            <Link
+              to="/profile"
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden flex-shrink-0"
+            >
+              {profileImageUrl ? (
+                <img
+                  src={profileImageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                (user.full_name || user.name || "U")[0].toUpperCase()
+              )}
+            </Link>
+          )}
           <button
             className="p-2 dark:text-gray-300"
             onClick={() => navbar.setMobileOpen(!navbar.mobileOpen)}
