@@ -211,25 +211,29 @@ const JobApplicants = () => {
                         Skills:
                       </span>
                       <div className="flex flex-wrap gap-1">
-                        {applicant.skills && applicant.skills.length > 0 ? (
-                          applicant.skills.slice(0, 3).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs"
-                            >
-                              {skill}
-                            </span>
-                          ))
+                        {applicant.skills ? (
+                          applicant.skills
+                            .split(",")
+                            .slice(0, 3)
+                            .map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs"
+                              >
+                                {skill.trim()}
+                              </span>
+                            ))
                         ) : (
                           <span className="text-xs text-gray-400">
                             No skills listed
                           </span>
                         )}
-                        {applicant.skills && applicant.skills.length > 3 && (
-                          <span className="text-xs text-gray-500 px-2">
-                            +{applicant.skills.length - 3} more
-                          </span>
-                        )}
+                        {applicant.skills &&
+                          applicant.skills.split(",").length > 3 && (
+                            <span className="text-xs text-gray-500 px-2">
+                              +{applicant.skills.split(",").length - 3} more
+                            </span>
+                          )}
                       </div>
                     </div>
                   </div>
