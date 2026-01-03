@@ -168,7 +168,7 @@ const MyApplications = () => {
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                       {app.job_title}
                     </h3>
-                    {getStatusBadge(app.status)}
+                    <div className="flex">{getStatusBadge(app.status)}</div>
                   </div>
 
                   <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
